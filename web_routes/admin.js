@@ -13,7 +13,9 @@ router.get("/customers", web_adminController.customers_data)
 router.get("/all_customers", web_adminController.all_customers)
 
 router.get("/all_product", web_adminController.all_product)
-// router.delete("/all_product", web_adminController)
+router.delete("/all_product", web_adminController.delete_all_product)
+router.post("/all_product", web_adminController.postProduct)
+router.put("/all_product", web_adminController.update_all_product)
 
 router.get("/category/:id", web_adminController.fetchProductById)
 router.get("/category", web_adminController.product_category)

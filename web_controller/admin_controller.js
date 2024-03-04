@@ -11,7 +11,9 @@ const {
   deleteAdminCategory,
   fetchProductById,
   putAdminCategory,
-  deleteProduct,
+  deleteAllProduct,
+  postAllProduct,
+  putAllProduct
 } = require("../web_models/admin");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -139,6 +141,37 @@ exports.all_product = async (req, res) => {
   }
 };
 
+exports.postProduct = async(req, res) => {
+  try{
+    const {seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, product_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description} = req.body
+
+    await postAllProduct(seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, product_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description)
+
+    return res.status(201).json({
+      message: "entries created",
+      success: "true",
+    })
+
+  }
+  catch(error){
+    console.log(error)
+  }
+}
+exports.delete_all_product = async(req,res) => {
+  try{
+    const {id} = req.body
+    const deleted_product = await deleteAllProduct(id)
+    console.log(deleted_product)
+    return res.status(200).json({
+      message: "product deleted",
+      success: "true",
+    })
+  }
+  catch(error){
+    console.log(error)
+  }
+}
+
 exports.product_category = async (req, res) => {
   try {
     await getAdminCategory();
@@ -237,3 +270,19 @@ exports.update_product_category = async (req, res) => {
     });
   }
 };
+
+exports.update_all_product = async (req, res)=> {
+  try{
+    const{id, seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description} = req.body
+
+    const updated_product = await putAllProduct(id, seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description)
+
+    return res.status(201).json({
+      message: "entries updated",
+      success: "true"
+    })
+  }
+  catch(error){
+    console.log(error)
+  }
+}

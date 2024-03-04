@@ -31,6 +31,18 @@ module.exports = {
     return db.query("SELECT * FROM product");
   },
 
+  postAllProduct: async(seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description) => {
+    return db.query('INSERT INTO product (seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description])
+  },
+
+  putAllProduct: async (id, seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description) => {
+    return db.query('UPDATE product SET seller_id = ?, size_standard = ?, product_buy_rent = ?, location = ?, product_brand = ?, product_category = ?, product_image = ?, featured_product = ?, product_name = ?, price_sale_lend_price = ?, product_replacement_price = ?, product_rental_period = ?, wishlist_like = ?, product_description = ? WHERE id = ?', [seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description, id]);
+},
+
+  deleteAllProduct: async(id) => {
+    return db.query('DELETE FROM product WHERE id =?',[id])
+  },
+
   getAdminCategory: async () => {
     return db.query("SELECT * FROM product_category");
   },
