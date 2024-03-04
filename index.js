@@ -4,6 +4,7 @@ const web_product = require("./web_routes/prodcut");
 const web_category = require("./web_routes/category");
 const web_cart = require("./web_routes/cart");
 const web_order = require("./web_routes/orderRouter");
+const web_admin = require("./web_routes/admin")
 const cors = require("cors");
 const path = require("path");
 
@@ -26,6 +27,7 @@ app.use("/web", web_product);
 app.use("/web", web_category);
 app.use("/web", web_cart);
 app.use("/web", web_order);
+app.use("/web", web_admin)
 
 app.get("/", (req, res) => {
   res.send({ success: "0", message: "Hello World" });

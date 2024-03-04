@@ -7,7 +7,6 @@ const router = express.Router();
 
 router.post("/signUp", web_userController.signUp);
 
-
 router.post("/login_buyer", web_userController.login_buyer);
 
 router.post("/verifyUser", web_userController.verifyUser);
@@ -33,5 +32,7 @@ router.post("/editProfile", auth, upload.single("file"), web_userController.edit
 router.post("/lenderissue", web_userController.lenderissue)
 router.post("/buyer_issue", web_userController.buyer_issue)
 router.post("/renter_issue", web_userController.renter_issue)
+
+
 
 module.exports = router;
