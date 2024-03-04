@@ -556,104 +556,6 @@ exports.order_list = async (req, res) => {
   }
 };
 
-exports.fetch_order = async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader.replace("Bearer ", "");
-    const decoded = jwt.decode(token);
-    const userID = decoded.data.id;
-
-    const order_details = await getChekOutById(userID);
-    console.log("order_details==>>", order_details);
-
-    if (order_details.length > 0) {
-
-
-
-      const Card_details = await fetchOrderById(userID);
-      await Promise.all(
-        Card_details.map(async (item) => {
-
-          let prodcut_Id = item.product_id
-
-          const Product_details = await getAllProduct_by_id(prodcut_Id);
-
-
-          if (Product_details[0].product_image != 0) {
-            // item.profile_image = baseurl + "/profile/" + item.profile_image;
-            item.product_image = baseurl + "/productImage/" + Product_details[0].product_image;
-          }
-
-
-          item.sub_total = item.cart_price * item.cart_quantity
-
-          const get_prduct_brands = await get_product_brandd(prodcut_Id)
-          const product_brand_1 = get_prduct_brands.map(imageObj => imageObj.product_brand ? imageObj.product_brand : " ")
-          item.product_brand = product_brand_1[0]
-
-          const get_prduct_size = await get_product_size(prodcut_Id)
-          const get_prduct_color = await get_product_color(prodcut_Id)
-
-
-          item.product_color = get_prduct_color.map(imageObj => imageObj.product_color ? imageObj.product_color : " ")
-          item.product_size = get_prduct_size
-
-          console.log(fetchBuyerBy_Id)
-        })
-      );
-
-
-
-      function calculateTotalPrice(Card_details) {
-        var totalPrice = 0;
-        for (var i = 0; i < Card_details.length; i++) {
-          totalPrice += Card_details[i].sub_total;
-        }
-        return totalPrice;
-      }
-
-      // Calculate total price_sale_lend_price
-      var totalPrice = calculateTotalPrice(Card_details);
-
-      console.log("Total price_sale_lend_price:", totalPrice);
-
-
-      let vat_percentage = "16%";
-
-      let vat_sub_total = calculatePercentage(totalPrice, 16) + totalPrice;
-
-
-
-      return res.json({
-        message: "All product detailsss",
-        status: 200,
-        success: true,
-        order_details: order_details[order_details.length-1],
-        Card_details: Card_details,
-        vat_percentage: vat_percentage,
-        vat_sub_total: vat_sub_total,
-        totalPrice: totalPrice,
-        free_shipping: "free_shipping",
-      });
-
-    } else {
-      return res.json({
-        message: "No data found",
-        status: 200,
-        success: false,
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      status: 500,
-      error: error.message || "Unknown error",
-    });
-  }
-};
-
 // exports.fetch_order = async (req, res) => {
 //   try {
 //     const authHeader = req.headers.authorization;
@@ -661,63 +563,57 @@ exports.fetch_order = async (req, res) => {
 //     const decoded = jwt.decode(token);
 //     const userID = decoded.data.id;
 
-//     const allProducts = await getChekOutById(userID);
-//     console.log("allProd==>>", allProducts);
+//     const order_details = await getChekOutById(userID);
+//     console.log("order_details==>>", order_details);
 
-//     if (allProducts.length > 0) {
+//     if (order_details.length > 0) {
 
+
+
+//       const Card_details = await fetchOrderById(userID);
 //       await Promise.all(
-//         allProducts.map(async (item_1) => {
+//         Card_details.map(async (item) => {
 
-//           const Cart_details = await getCartDetails_by_id_1(userID, item_1.cart_id);
+//           let prodcut_Id = item.product_id
 
-//           await Promise.all(
-//             Cart_details.map(async (item) => {
-
+//           const Product_details = await getAllProduct_by_id(prodcut_Id);
 
 
-//               let prodcut_Id = item.product_id
-
-//               // const Product_details = await getAllProduct_by_id(prodcut_Id);
-
-
-//               // if (Product_details[0].product_image != 0) {
-//               //   // item.profile_image = baseurl + "/profile/" + item.profile_image;
-//               //   item.profile_images = baseurl + "/productImage/" + Product_details[0].product_image;
-//               // }
+//           if (Product_details[0].product_image != 0) {
+//             // item.profile_image = baseurl + "/profile/" + item.profile_image;
+//             item.product_image = baseurl + "/productImage/" + Product_details[0].product_image;
+//           }
 
 
-//               item.sub_total = item.cart_price * item.cart_quantity
+//           item.sub_total = item.cart_price * item.cart_quantity
 
-//               const get_prduct_brands = await get_product_brandd(prodcut_Id)
-//               const product_brand_1 = get_prduct_brands.map(imageObj => imageObj.product_brand ? imageObj.product_brand : " ")
-//               item.product_brand = product_brand_1[0]
+//           const get_prduct_brands = await get_product_brandd(prodcut_Id)
+//           const product_brand_1 = get_prduct_brands.map(imageObj => imageObj.product_brand ? imageObj.product_brand : " ")
+//           item.product_brand = product_brand_1[0]
 
-//               // const get_prduct_size = await get_product_size(prodcut_Id)
-//               // const get_prduct_color = await get_product_color(prodcut_Id)
+//           const get_prduct_size = await get_product_size(prodcut_Id)
+//           const get_prduct_color = await get_product_color(prodcut_Id)
 
 
-//               // item.product_color = get_prduct_color.map(imageObj => imageObj.product_color ? imageObj.product_color : " ")
-//               // item.product_size = get_prduct_size
+//           item.product_color = get_prduct_color.map(imageObj => imageObj.product_color ? imageObj.product_color : " ")
+//           item.product_size = get_prduct_size
 
-//             })
-//           );
-
-//           item_1.Cart_details = Cart_details
-
+//           console.log(fetchBuyerBy_Id)
 //         })
 //       );
 
-//       function calculateTotalPrice(allProducts) {
+
+
+//       function calculateTotalPrice(Card_details) {
 //         var totalPrice = 0;
-//         for (var i = 0; i < allProducts.length; i++) {
-//           totalPrice += allProducts[i].sub_total;
+//         for (var i = 0; i < Card_details.length; i++) {
+//           totalPrice += Card_details[i].sub_total;
 //         }
 //         return totalPrice;
 //       }
 
 //       // Calculate total price_sale_lend_price
-//       var totalPrice = calculateTotalPrice(allProducts);
+//       var totalPrice = calculateTotalPrice(Card_details);
 
 //       console.log("Total price_sale_lend_price:", totalPrice);
 
@@ -726,16 +622,20 @@ exports.fetch_order = async (req, res) => {
 
 //       let vat_sub_total = calculatePercentage(totalPrice, 16) + totalPrice;
 
+
+
 //       return res.json({
-//         message: "All product details",
+//         message: "All product detailsss",
 //         status: 200,
 //         success: true,
-//         cart: allProducts,
+//         order_details: order_details[order_details.length-1],
+//         Card_details: Card_details,
 //         vat_percentage: vat_percentage,
 //         vat_sub_total: vat_sub_total,
 //         totalPrice: totalPrice,
 //         free_shipping: "free_shipping",
 //       });
+
 //     } else {
 //       return res.json({
 //         message: "No data found",
@@ -753,3 +653,103 @@ exports.fetch_order = async (req, res) => {
 //     });
 //   }
 // };
+
+exports.fetch_order = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader.replace("Bearer ", "");
+    const decoded = jwt.decode(token);
+    const userID = decoded.data.id;
+
+    const allProducts = await getChekOutById(userID);
+    console.log("allProd==>>", allProducts);
+
+    if (allProducts.length > 0) {
+
+      await Promise.all(
+        allProducts.map(async (item_1) => {
+
+          const Cart_details = await getCartDetails_by_id_1(userID, item_1.cart_id);
+
+          await Promise.all(
+            Cart_details.map(async (item) => {
+
+
+
+              let prodcut_Id = item.product_id
+
+              // const Product_details = await getAllProduct_by_id(prodcut_Id);
+
+
+              // if (Product_details[0].product_image != 0) {
+              //   // item.profile_image = baseurl + "/profile/" + item.profile_image;
+              //   item.profile_images = baseurl + "/productImage/" + Product_details[0].product_image;
+              // }
+
+
+              item.sub_total = item.cart_price * item.cart_quantity
+
+              const get_prduct_brands = await get_product_brandd(prodcut_Id)
+              const product_brand_1 = get_prduct_brands.map(imageObj => imageObj.product_brand ? imageObj.product_brand : " ")
+              item.product_brand = product_brand_1[0]
+
+              // const get_prduct_size = await get_product_size(prodcut_Id)
+              // const get_prduct_color = await get_product_color(prodcut_Id)
+
+
+              // item.product_color = get_prduct_color.map(imageObj => imageObj.product_color ? imageObj.product_color : " ")
+              // item.product_size = get_prduct_size
+
+            })
+          );
+
+          item_1.Cart_details = Cart_details
+
+        })
+      );
+
+      function calculateTotalPrice(allProducts) {
+        var totalPrice = 0;
+        for (var i = 0; i < allProducts.length; i++) {
+          totalPrice += allProducts[i].sub_total;
+        }
+        return totalPrice;
+      }
+
+      // Calculate total price_sale_lend_price
+      var totalPrice = calculateTotalPrice(allProducts);
+
+      console.log("Total price_sale_lend_price:", totalPrice);
+
+
+      let vat_percentage = "16%";
+
+      let vat_sub_total = calculatePercentage(totalPrice, 16) + totalPrice;
+
+      return res.json({
+        message: "All product details",
+        status: 200,
+        success: true,
+        cart: allProducts,
+        vat_percentage: vat_percentage,
+        vat_sub_total: vat_sub_total,
+        totalPrice: totalPrice,
+        free_shipping: "free_shipping",
+      });
+    } else {
+      return res.json({
+        message: "No data found",
+        status: 200,
+        success: false,
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      status: 500,
+      error: error.message || "Unknown error",
+    });
+  }
+};

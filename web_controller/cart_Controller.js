@@ -5,14 +5,17 @@ const config = require("../config");
 const {
   createCart,
   fetchCartByUserId,
-  fetchCartById, getAllProduct_by_id,
+  fetchCartById,
+  getAllProduct_by_id,
   updateCartById,
-  deleteCartById, check_cart,
+  deleteCartById,
+  check_cart,
   fetchUserBy_Id,
   deleteCartByuserId,
   getCartByProductIdAndUserId,
   deleteCartByProductIdAndUserId,
-  fetchBuyerBy_Id, get_product_color,
+  fetchBuyerBy_Id,
+  get_product_color,
   getCartByProductIdAndBuyerId,
   deleteCartByProductIdAndBuyerId,
   checkBuyerExistence,
@@ -41,18 +44,28 @@ const {
   delete_text,
 } = require("../web_models/cart");
 
-
 const baseurl = config.base_url;
 
 function generateRandomNumber(min, max) {
   return Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000;
 }
 
-
 exports.addTocart = async (req, res) => {
   try {
     // const { product_id, cart_quantity, size_bottom, size_top, color } = req.body;
-    let { product_id, cart_quantity, start_date, end_date, size_bottom, size_top, total_rend_days, rent_cart, color, userId, guest_user } = req.body;
+    let {
+      product_id,
+      cart_quantity,
+      start_date,
+      end_date,
+      size_bottom,
+      size_top,
+      total_rend_days,
+      rent_cart,
+      color,
+      userId,
+      guest_user,
+    } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
         product_id: Joi.number().empty().required(),
@@ -79,7 +92,6 @@ exports.addTocart = async (req, res) => {
         success: false,
       });
     } else {
-
       // const authHeader = req.headers.authorization;
       // const token_1 = authHeader;
       // const token = token_1.replace("Bearer ", "");
@@ -87,7 +99,6 @@ exports.addTocart = async (req, res) => {
       // const userId = decoded.data.id;
 
       if (guest_user != 1) {
-
         const userData = await fetchBuyerBy_Id(userId);
         console.log("userData==>>>", userData);
 
@@ -99,8 +110,6 @@ exports.addTocart = async (req, res) => {
         }
       }
 
-
-
       const productExists = await checkProductExistence(product_id);
       console.log("productExists==>>>", productExists);
       if (productExists.length === 0) {
@@ -110,7 +119,6 @@ exports.addTocart = async (req, res) => {
         });
       }
       if (rent_cart == 1) {
-
         if (productExists[0].product_buy_rent !== "rent") {
           return res.status(400).json({
             success: false,
@@ -119,10 +127,11 @@ exports.addTocart = async (req, res) => {
         }
       }
 
-
       // Check if the item is already present in the cart
-      const existingitem = await getCartByProductIdAndBuyerId(product_id, userId);
-
+      const existingitem = await getCartByProductIdAndBuyerId(
+        product_id,
+        userId
+      );
 
       if (existingitem.length !== 0) {
         return res.status(200).json({
@@ -132,7 +141,7 @@ exports.addTocart = async (req, res) => {
       }
 
       var cart_number = generateRandomNumber(4, 6);
-      const checkCart = await check_cart(userId)
+      const checkCart = await check_cart(userId);
 
       // Add the item to the cart
 
@@ -144,10 +153,10 @@ exports.addTocart = async (req, res) => {
         size_bottom: size_bottom ? size_bottom : 0,
         size_top: size_top ? size_top : 0,
         color: color ? color : 0,
-        cart_id: (checkCart.length != 0) ? checkCart[0].cart_id : cart_number,
+        cart_id: checkCart.length != 0 ? checkCart[0].cart_id : cart_number,
         total_rend_days: total_rend_days ? total_rend_days : 0,
         start_date: start_date ? start_date : null,
-        end_date: end_date ? end_date : null
+        end_date: end_date ? end_date : null,
       };
 
       const addCart = await createCart(cartData);
@@ -160,9 +169,7 @@ exports.addTocart = async (req, res) => {
         message: "Item added to the cart successfully",
         data: getCart,
       });
-
     }
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -195,39 +202,39 @@ exports.getCartByUserId = async (req, res) => {
       const allProduct = await getCartById(userId);
 
       if (allProduct.length > 0) {
-
         await Promise.all(
           allProduct.map(async (item) => {
-            item.new_cart_id = item.id
-            let prodcut_Id = item.product_id
+            item.new_cart_id = item.id;
+            let prodcut_Id = item.product_id;
 
             const Product_details = await getAllProduct_by_id(prodcut_Id);
 
-
             if (Product_details[0].product_image != 0) {
               // item.profile_image = baseurl + "/profile/" + item.profile_image;
-              item.profile_images = baseurl + "/productImage/" + Product_details[0].product_image;
+              item.profile_images =
+                baseurl + "/productImage/" + Product_details[0].product_image;
             }
 
-            item.product_buy_rent = Product_details[0].product_buy_rent
+            item.product_buy_rent = Product_details[0].product_buy_rent;
 
             // if(rent_cart == 0){
             //   item.sub_total = item.cart_price * item.total_rend_days
             // }
-            item.sub_total = item.cart_price * item.cart_quantity
+            item.sub_total = item.cart_price * item.cart_quantity;
 
-            const get_prduct_brands = await get_product_brandd(prodcut_Id)
-            const product_brand_1 = get_prduct_brands.map(imageObj => imageObj.product_brand ? imageObj.product_brand : " ")
-            item.product_brand = product_brand_1[0]
+            const get_prduct_brands = await get_product_brandd(prodcut_Id);
+            const product_brand_1 = get_prduct_brands.map((imageObj) =>
+              imageObj.product_brand ? imageObj.product_brand : " "
+            );
+            item.product_brand = product_brand_1[0];
 
-            const get_prduct_size = await get_product_size(prodcut_Id)
-            const get_prduct_color = await get_product_color(prodcut_Id)
+            const get_prduct_size = await get_product_size(prodcut_Id);
+            const get_prduct_color = await get_product_color(prodcut_Id);
 
-
-            item.product_color = get_prduct_color.map(imageObj => imageObj.product_color ? imageObj.product_color : " ")
-            item.product_size = get_prduct_size
-
-
+            item.product_color = get_prduct_color.map((imageObj) =>
+              imageObj.product_color ? imageObj.product_color : " "
+            );
+            item.product_size = get_prduct_size;
           })
         );
 
@@ -272,8 +279,17 @@ exports.getCartByUserId = async (req, res) => {
 
 exports.editCart = async (req, res) => {
   try {
-
-    const { user_id, card_id, cart_quantity, size_bottom, size_top, color, start_date, end_date, total_rend_days } = req.body;
+    const {
+      user_id,
+      card_id,
+      cart_quantity,
+      size_bottom,
+      size_top,
+      color,
+      start_date,
+      end_date,
+      total_rend_days,
+    } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
         user_id: Joi.number().empty().required(),
@@ -298,7 +314,6 @@ exports.editCart = async (req, res) => {
         success: false,
       });
     } else {
-
       const cartData = await fetchCartById(card_id, user_id);
 
       if (cartData.length == 0) {
@@ -310,15 +325,18 @@ exports.editCart = async (req, res) => {
       }
 
       const cart_data = {
-        cart_quantity: cart_quantity ? cart_quantity : cartData[0].cart_quantity,
+        cart_quantity: cart_quantity
+          ? cart_quantity
+          : cartData[0].cart_quantity,
         size_bottom: size_bottom ? size_bottom : cartData[0].size_bottom,
         size_top: size_top ? size_top : cartData[0].size_top,
         color: color ? color : cartData[0].color,
         start_date: start_date ? start_date : cartData[0].start_date,
         end_date: end_date ? end_date : cartData[0].end_date,
-        total_rend_days: total_rend_days ? total_rend_days : cartData[0].total_rend_days,
+        total_rend_days: total_rend_days
+          ? total_rend_days
+          : cartData[0].total_rend_days,
       };
-
 
       const update_cart_Data = await updateCartById(cart_data, card_id);
       const updated_cart_Data = await fetchCartById(card_id, user_id);
@@ -329,9 +347,7 @@ exports.editCart = async (req, res) => {
         message: "Cart details updated successfully!",
         updated_cart_Data: updated_cart_Data,
       });
-
     }
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -386,7 +402,16 @@ exports.deleteCart = async (req, res) => {
 
 exports.addToRentCart = async (req, res) => {
   try {
-    let { product_id, cart_quantity, start_date, end_date, size_bottom, size_top, total_rend_days, rent_price } = req.body;
+    let {
+      product_id,
+      cart_quantity,
+      start_date,
+      end_date,
+      size_bottom,
+      size_top,
+      total_rend_days,
+      rent_price,
+    } = req.body;
 
     const schema = Joi.alternatives(
       Joi.object({
@@ -412,7 +437,6 @@ exports.addToRentCart = async (req, res) => {
         success: false,
       });
     } else {
-
       const authHeader = req.headers.authorization;
       const token_1 = authHeader;
       const token = token_1.replace("Bearer ", "");
@@ -444,9 +468,11 @@ exports.addToRentCart = async (req, res) => {
         });
       }
 
-
       // Check if the item is already present in the cart
-      const existingItem = await getCartByProductIdAndBuyerId(product_id, userId);
+      const existingItem = await getCartByProductIdAndBuyerId(
+        product_id,
+        userId
+      );
 
       if (existingItem.length !== 0) {
         return res.status(400).json({
@@ -454,7 +480,6 @@ exports.addToRentCart = async (req, res) => {
           message: "Item already in the cart",
         });
       }
-
 
       // Fetch product details by product ID
 
@@ -477,7 +502,7 @@ exports.addToRentCart = async (req, res) => {
       }
 
       var cart_number = generateRandomNumber(4, 6);
-      const checkCart = await check_cart(userId)
+      const checkCart = await check_cart(userId);
 
       // Add the item to the cart
 
@@ -492,13 +517,12 @@ exports.addToRentCart = async (req, res) => {
         size_bottom: size_bottom,
         rent_cart: 1,
         total_rend_days: total_rend_days,
-        cart_id: (checkCart.length != 0) ? checkCart[0].cart_id : cart_number
+        cart_id: checkCart.length != 0 ? checkCart[0].cart_id : cart_number,
       };
-
 
       const add_rent_Cart = await createCart(cartData);
 
-      console.log(">>>>>>>add_rent_Cart>>>>>", add_rent_Cart)
+      console.log(">>>>>>>add_rent_Cart>>>>>", add_rent_Cart);
 
       return res.status(200).json({
         success: true,
@@ -518,11 +542,8 @@ exports.addToRentCart = async (req, res) => {
 
 // wishlist functionality
 
-
-
 exports.add_product_wishlist = async (req, res) => {
   try {
-
     let { userId, product_id } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
@@ -542,7 +563,7 @@ exports.add_product_wishlist = async (req, res) => {
         success: false,
       });
     } else {
-      let buyer_id = userId
+      let buyer_id = userId;
       const isProductInWishlist = await check_product_in_wishlist(
         buyer_id,
         product_id
@@ -558,13 +579,10 @@ exports.add_product_wishlist = async (req, res) => {
             message: " Product deleted from Wishlist  successfully!",
           });
         }
-
-
       } else {
         const data = {
           buyer_id,
           product_id,
-
         };
 
         const result = await insert_wishlist(data);
@@ -601,7 +619,6 @@ exports.add_product_wishlist = async (req, res) => {
 
 exports.get_wishlist_by_id = async (req, res) => {
   try {
-
     let { userId } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
@@ -619,18 +636,14 @@ exports.get_wishlist_by_id = async (req, res) => {
         success: false,
       });
     } else {
-
-      let buyer_id = userId
+      let buyer_id = userId;
       const wishListDetails = await getWishlistById(buyer_id);
 
       if (wishListDetails.length > 0) {
-
         await Promise.all(
           wishListDetails.map(async (item) => {
-
-            let prodcutId = item.product_id
+            let prodcutId = item.product_id;
             const Product_details = await getAllProduct_by_id(prodcutId);
-
 
             if (Product_details[0].product_image != 0) {
               // item.profile_image = baseurl + "/profile/" + item.profile_image;
@@ -638,22 +651,28 @@ exports.get_wishlist_by_id = async (req, res) => {
                 baseurl + "/productImage/" + Product_details[0].product_image;
             }
 
-            item.price_sale_lend_price = Product_details[0].price_sale_lend_price
-            item.product_description = Product_details[0].product_description
-            const get_prduct_size = await get_product_size(prodcutId)
-            const get_prduct_brands = await get_product_brandd(prodcutId)
-            const get_product_Category = await get_product_category(prodcutId)
-            const get_prduct_color = await get_product_color(prodcutId)
-            const get_product_images = await get_product_imagesss(prodcutId)
+            item.price_sale_lend_price =
+              Product_details[0].price_sale_lend_price;
+            item.product_description = Product_details[0].product_description;
+            const get_prduct_size = await get_product_size(prodcutId);
+            const get_prduct_brands = await get_product_brandd(prodcutId);
+            const get_product_Category = await get_product_category(prodcutId);
+            const get_prduct_color = await get_product_color(prodcutId);
+            const get_product_images = await get_product_imagesss(prodcutId);
 
-
-            item.product_images = get_product_images.map(imageObj => imageObj.product_image ? imageObj.product_image : " ")
-            item.product_brand = get_prduct_brands[0].product_brand
-            item.product_color = get_prduct_color.map(imageObj => imageObj.product_color ? imageObj.product_color : " ")
-            item.product_Categories = (get_product_Category.length != 0) ? get_product_Category[0].product_category : ""
-            item.product_size = get_prduct_size
-            item.wishlist_like = 1
-
+            item.product_images = get_product_images.map((imageObj) =>
+              imageObj.product_image ? imageObj.product_image : " "
+            );
+            item.product_brand = get_prduct_brands[0].product_brand;
+            item.product_color = get_prduct_color.map((imageObj) =>
+              imageObj.product_color ? imageObj.product_color : " "
+            );
+            item.product_Categories =
+              get_product_Category.length != 0
+                ? get_product_Category[0].product_category
+                : "";
+            item.product_size = get_prduct_size;
+            item.wishlist_like = 1;
           })
         );
 
@@ -687,14 +706,12 @@ exports.remove__wishlist = async (req, res) => {
     const buyer_id = req.user;
     const product_id = req.params.product_id;
 
-
     const isProductInWishlist = await check_product_in_wishlist(
       buyer_id,
       product_id
     );
 
     if (isProductInWishlist.length > 0) {
-
       deleteWishList = await remove_from_wishlist(buyer_id, product_id);
 
       if (deleteWishList) {
@@ -704,18 +721,13 @@ exports.remove__wishlist = async (req, res) => {
           message: "Wishlist deleted successfully!",
         });
       }
-
-
     } else {
-
       return res.json({
         success: false,
         status: 400,
         message: "Product not exist in whislist",
       });
     }
-
-
   } catch (error) {
     console.error(error);
     return res.json({
@@ -726,4 +738,3 @@ exports.remove__wishlist = async (req, res) => {
     });
   }
 };
-

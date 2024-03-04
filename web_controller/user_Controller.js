@@ -48,7 +48,6 @@ const {
   createBuyerIssue,
   createRenterIssue
 } = require("../web_models/users");
-const { Console } = require("console");
 
 const baseurl = config.base_url;
 
