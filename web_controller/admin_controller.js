@@ -12,11 +12,24 @@ const {
   fetchProductById,
   putAdminCategory,
   deleteAllProduct,
-  postAllProduct,
-  putAllProduct
+  postAddProduct,
+  getCartDataBYId,
+  putAllProduct,
+  postAddProductAdmin,
+  getAdminOrders,
+  deleteAdminOrder,
+  fetchCategoryByProductId,
+  fetchOrderById,
+  updateAdminOrder,
+  admin_dashboard,
+  total_spend,
+  fetchBuyer,
+  fetchProductIdById,
 } = require("../web_models/admin");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { parseTwoDigitYear } = require("moment");
+const { all } = require("axios");
 
 exports.admin_login = async (req, res) => {
   try {
@@ -50,18 +63,18 @@ exports.admin_login = async (req, res) => {
           return res.status(200).json({
             message: "user fetched",
             // user: data,
-            success: "true",
+            success: true,
           });
         } else {
           return res.status(201).json({
             message: "incorrect email or password",
-            status: "false",
+            status: false,
           });
         }
       } else {
         return res.status(201).json({
           message: "email or password incorrect",
-          success: "false",
+          success: false,
         });
       }
     }
@@ -70,58 +83,101 @@ exports.admin_login = async (req, res) => {
   }
 };
 
-exports.total_orders = async (req, res) => {
+// exports.total_orders = async (req, res) => {
+//   try {
+//     await total_orders();
+//     await console.log(total_orders);
+//     const data = await total_orders();
+//     return res.status(200).json({
+//       message: "total orders fetched",
+//       total_orders: data,
+//       success: "true",
+//     });
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
+exports.admin_dashboard = async (req, res) => {
   try {
-    await total_orders();
-    await console.log(total_orders);
-    const data = await total_orders();
+    const seller_data = await seller_earning();
+    const customer_data = await customers();
+    const total_data = await total_orders();
     return res.status(200).json({
-      message: "total orders fetched",
-      total_orders: data,
-      success: "true",
+      data: {
+        seller_earning: seller_data[0]?.total_earning,
+        customers: customer_data[0]?.total_customers,
+        total_orders: total_data[0]?.total_orders,
+      },
+      success: true,
     });
   } catch (error) {
     console.log(error);
   }
 };
 
-exports.seller_earning = async (req, res) => {
-  try {
-    await seller_earning();
-    const sell = await seller_earning();
-    return res.status(200).json({
-      message: "total seller earning",
-      seller_earning: sell,
-      success: "true",
-    });
-  } catch (error) {
-    console.log(error);
-  }
-};
+// exports.seller_earning = async (req, res) => {
+//   try {
+//     await seller_earning();
+//     const sell = await seller_earning();
+//     return res.status(200).json({
+//       message: "total seller earning",
+//       seller_earning: sell,
+//       success: "true",
+//     });
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
 
-exports.customers_data = async (req, res) => {
-  try {
-    await customers();
-    const customers_data = await customers();
-    return res.status(200).json({
-      message: " all customers count fetched",
-      customers: customers_data,
-      success: "true",
-    });
-  } catch (error) {
-    console.log(error);
-  }
-};
+// exports.customers_data = async (req, res) => {
+//   try {
+//     await customers();
+//     const customers_data = await customers();
+//     return res.status(200).json({
+//       message: " all customers count fetched",
+//       customers: customers_data,
+//       success: "true",
+//     });
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
 
 exports.all_customers = async (req, res) => {
   try {
     await fetchAllCustomers();
     const all_customers_data = await fetchAllCustomers();
-    return res.status(200).json({
-      message: "all customers data from tbl_buyer",
-      customers: all_customers_data,
-      success: "true",
-    });
+    if (all_customers_data?.length != 0) {
+      for (var i = 0; i < all_customers_data?.length; i++) {
+        const data12 = await getCartDataBYId(all_customers_data[i]?.id);
+        // console.log(data12,"data12")
+        if (data12?.length != 0) {
+          all_customers_data[i].total_order = data12?.length;
+        }else{
+          all_customers_data[i].total_order = 0;
+        }
+
+
+        const spent_data = await total_spend(all_customers_data[i]?.id)
+        console.log(spent_data, "spent_data")
+        if(spent_data?.length != 0){
+          all_customers_data[i].total_spend = spent_data[0]?.total_spend;
+        }else{
+          all_customers_data[i].total_spend = 0;
+        }
+      }
+      return await res.status(200).json({
+        message: "all customers data from tbl_buyer",
+        success: "true",
+        customers: all_customers_data,
+      });
+    } else {
+      return res.status(200).json({
+        message: "Customers not found!",
+        success: false,
+      });
+    }
   } catch (error) {
     console.log(error);
   }
@@ -134,6 +190,93 @@ exports.all_product = async (req, res) => {
     return res.status(200).json({
       message: "all products data",
       products: all_products_data,
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+exports.postProduct = async (req, res) => {
+  try {
+    const {
+      seller_id,
+      size_standard,
+      product_buy_rent,
+      location,
+      product_brand,
+      product_category,
+      product_image,
+      featured_product,
+      product_name,
+      product_sale_lend_price,
+      product_replacement_price,
+      product_rental_period,
+      wishlist_like,
+      product_description,
+    } = req.body;
+    const schema = Joi.alternatives(
+      Joi.object({
+        seller_id: [Joi.string().empty().required()],
+        size_standard: [Joi.string().empty().required()],
+        product_buy_rent: [Joi.string().empty().required()],
+        location: [Joi.string().empty().required()],
+        product_brand: [Joi.string().empty().required()],
+        product_category: [Joi.string().empty().required()],
+        product_image: [Joi.string().empty().required()],
+        featured_product: [Joi.string().empty().required()],
+        product_name: [Joi.string().empty().required()],
+        product_sale_lend_price: [Joi.string().empty().required()],
+        product_replacement_price: [Joi.string().empty().required()],
+        product_rental_period: [Joi.string().empty().required()],
+        wishlist_like: [Joi.string().empty().required()],
+        product_description: [Joi.string().empty().required()],
+      })
+    );
+    const result = schema.validate({
+      seller_id,
+      size_standard,
+      product_buy_rent,
+      location,
+      product_brand,
+      product_category,
+      product_image,
+      featured_product,
+      product_name,
+      product_sale_lend_price,
+      product_replacement_price,
+      product_rental_period,
+      wishlist_like,
+      product_description,
+    });
+    if (result.error) {
+      const message = result.error.details.map((i) => i.message).join(",");
+      res.status(201).json({
+        message: result.error.details[0].message,
+        error: message,
+        missingParams: result.error.details[0].message,
+        status: false,
+        success: false,
+      });
+    }
+    await postAddProductAdmin(
+      seller_id,
+      size_standard,
+      product_buy_rent,
+      location,
+      product_brand,
+      product_category,
+      product_image,
+      featured_product,
+      product_name,
+      product_sale_lend_price,
+      product_replacement_price,
+      product_rental_period,
+      wishlist_like,
+      product_description
+    );
+    return res.status(201).json({
+      message: "entries created",
       success: "true",
     });
   } catch (error) {
@@ -141,36 +284,19 @@ exports.all_product = async (req, res) => {
   }
 };
 
-exports.postProduct = async(req, res) => {
-  try{
-    const {seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, product_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description} = req.body
-
-    await postAllProduct(seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, product_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description)
-
-    return res.status(201).json({
-      message: "entries created",
-      success: "true",
-    })
-
-  }
-  catch(error){
-    console.log(error)
-  }
-}
-exports.delete_all_product = async(req,res) => {
-  try{
-    const {id} = req.body
-    const deleted_product = await deleteAllProduct(id)
-    console.log(deleted_product)
+exports.delete_all_product = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const deleted_product = await deleteAllProduct(id);
+    console.log(deleted_product);
     return res.status(200).json({
       message: "product deleted",
-      success: "true",
-    })
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
   }
-  catch(error){
-    console.log(error)
-  }
-}
+};
 
 exports.product_category = async (req, res) => {
   try {
@@ -189,19 +315,42 @@ exports.product_category = async (req, res) => {
 exports.post_product_category = async (req, res) => {
   try {
     const { product_id, product_category, product_description } = req.body;
-    await PostAdminCategory(product_id, product_category, product_description);
-    Joi.object({
-      product_id: [Joi.string().empty().required()],
-      product_category: [Joi.string().empty().required()],
-      product_description: [Joi.string().empty().required],
-    });
-    return res.status(201).json({
-      message: "product category created",
-      success: "true",
-      product: product_id,
+
+    const schema = Joi.alternatives(
+      Joi.object({
+        product_id: [Joi.string().empty().required()],
+        product_category: [Joi.string().empty().required()],
+        product_description: [Joi.string().empty().required()],
+      })
+    );
+    const result = schema.validate({
+      product_id,
       product_category,
       product_description,
     });
+    if (result.error) {
+      const message = result.error.details.map((i) => i.message).join(",");
+      return res.status(201).json({
+        message: result.error.details[0].message,
+        error: message,
+        missingParams: result.error.details[0].message,
+        status: false,
+        success: false,
+      });
+    } else {
+      await PostAdminCategory(
+        product_id,
+        product_category,
+        product_description
+      );
+      return res.status(201).json({
+        message: "product category created",
+        success: "true",
+        product: product_id,
+        product_category,
+        product_description,
+      });
+    }
   } catch (error) {
     console.log(error);
   }
@@ -239,11 +388,26 @@ exports.fetchProductById = async (req, res) => {
 exports.update_product_category = async (req, res) => {
   try {
     const { id, product_category, product_description } = req.body;
-    Joi.object({
-      id: [Joi.string().empty().required()],
-      product_category: [Joi.string.empty().required()],
-      product_description: [Joi.string().empty().require()],
-    });
+
+    const schema = Joi.alternatives(
+      Joi.object({
+        id: [Joi.string().empty().required()],
+        product_category: [Joi.string().empty().required()],
+        product_description: [Joi.string().empty().required()],
+      })
+    );
+    const result = schema.validate(req.body);
+    if (result.error) {
+      const message = result.error.details.map((i) => i.message).join(",");
+      return res.json({
+        message: result.error.details[0].message,
+        error: message,
+        missingParams: result.error.details[0].message,
+        status: 400,
+        success: false,
+      });
+    }
+
     const existingCategory = await fetchProductById(id);
     if (existingCategory.length !== 0) {
       const updated_product = await putAdminCategory(
@@ -271,18 +435,326 @@ exports.update_product_category = async (req, res) => {
   }
 };
 
-exports.update_all_product = async (req, res)=> {
-  try{
-    const{id, seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description} = req.body
+// exports.update_all_product = async (req, res) => {
+//   try {
+//     const {
+//       id,
+//       seller_id,
+//       size_standard,
+//       product_buy_rent,
+//       location,
+//       product_brand,
+//       product_category,
+//       product_image,
+//       featured_product,
+//       product_name,
+//       price_sale_lend_price,
+//       product_replacement_price,
+//       product_rental_period,
+//       wishlist_like,
+//       product_description,
+//     } = req.body;
 
-    const updated_product = await putAllProduct(id, seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description)
+//     const schema = Joi.alternatives(
+//       Joi.object({
+//         id: [Joi.string().empty().required()],
+//         seller_id: [Joi.string().empty().required()],
+//         size_standard: [Joi.string().empty().required()],
+//         product_buy_rent: [Joi.string().empty().required()],
+//         location: [Joi.string().empty().required()],
+//         product_brand: [Joi.string().empty().required()],
+//         product_category: [Joi.string().empty().required()],
+//         product_image: [Joi.string().empty().required()],
+//         featured_product: [Joi.string().empty().required()],
+//         product_name: [Joi.string().empty().required()],
+//         price_sale_lend_price: [Joi.string().empty().required()],
+//         product_replacement_price: [Joi.string().empty().required()],
+//         product_rental_period: [Joi.string().empty().required()],
+//         wishlist_like: [Joi.string().empty().required()],
+//         product_description: [Joi.string().empty().required()],
+//       })
+//     );
+//     const result = schema.validate({
+//       id,
+//       seller_id,
+//       size_standard,
+//       product_buy_rent,
+//       location,
+//       product_brand,
+//       product_category,
+//       product_image,
+//       featured_product,
+//       product_name,
+//       price_sale_lend_price,
+//       product_replacement_price,
+//       product_rental_period,
+//       wishlist_like,
+//       product_description,
+//     });
+//     if (result.error) {
+//       const message = result.error.details.map((i) => i.message).join(",");
+//       res.status(201).json({
+//         message: result.error.details[0].message,
+//         error: message,
+//         missingParams: result.error.details[0].message,
+//         status: false,
+//         success: false,
+//       });
+//     } else {
+//       const updated_product = await putAllProduct(
+//         id,
+//         seller_id,
+//         size_standard,
+//         product_buy_rent,
+//         location,
+//         product_brand,
+//         product_category,
+//         product_image,
+//         featured_product,
+//         product_name,
+//         price_sale_lend_price,
+//         product_replacement_price,
+//         product_rental_period,
+//         wishlist_like,
+//         product_description
+//       );
 
-    return res.status(201).json({
-      message: "entries updated",
-      success: "true"
-    })
+//       return res.status(201).json({
+//         message: "entries updated",
+//         updated_product: id,
+//         success: true,
+//       });
+//     }
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
+exports.update_all_product = async (req, res) => {
+  try {
+    // Destructure request body
+    const {
+      id,
+      seller_id,
+      size_standard,
+      product_buy_rent,
+      location,
+      product_brand,
+      product_category,
+      product_image, // Assuming this is the file field for product image
+      featured_product,
+      product_name,
+      price_sale_lend_price,
+      product_replacement_price,
+      product_rental_period,
+      wishlist_like,
+      product_description,
+    } = req.body;
+
+    // Validate request body using Joi
+    const schema = Joi.object({
+      id: Joi.string().required(),
+      seller_id: Joi.string().required(),
+      size_standard: Joi.string().required(),
+      product_buy_rent: Joi.string().required(),
+      location: Joi.string().required(),
+      product_brand: Joi.string().required(),
+      product_category: Joi.string().required(),
+      product_image: Joi.string().required(), // Assuming product_image is a required field
+      featured_product: Joi.string().required(),
+      product_name: Joi.string().required(),
+      price_sale_lend_price: Joi.string().required(),
+      product_replacement_price: Joi.string().required(),
+      product_rental_period: Joi.string().required(),
+      wishlist_like: Joi.string().required(),
+      product_description: Joi.string().required(),
+    });
+
+    // Validate request body against schema
+    const { error } = schema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+
+    // Handle file upload for product image
+    upload.single("product_image")(req, res, async function (err) {
+      if (err) {
+        // Multer error handling
+        return res.status(400).json({ message: err });
+      }
+
+      // If no error from Multer, proceed with other operations
+      // Updated product fields with new product image filename
+      const updated_product_image = req.file.filename;
+
+      // Call the function to update the product with the updated product image
+      const updated_product = await putAllProduct(
+        id,
+        seller_id,
+        size_standard,
+        product_buy_rent,
+        location,
+        product_brand,
+        product_category,
+        updated_product_image, // Use the updated product image filename
+        featured_product,
+        product_name,
+        price_sale_lend_price,
+        product_replacement_price,
+        product_rental_period,
+        wishlist_like,
+        product_description
+      );
+
+      return res.status(201).json({
+        message: "Product entry updated",
+        updated_product: id,
+        success: true,
+      });
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
-  catch(error){
-    console.log(error)
+};
+
+exports.getAllAdminOrders = async (req, res) => {
+  try {
+    const all_orders = await getAdminOrders();
+    if(all_orders?.length != 0){
+      for(var i = 0; i< all_orders?.length; i++){
+        const order_name = await fetchBuyer(all_orders[i].id)
+        if(order_name?.length != 0){
+          all_orders[i].buyer_name = order_name[0].buyer_name
+        }
+        else{
+          all_orders[i].buyer_name = ''
+        }
+
+        //fetching product id from product table 
+        
+      }
+      return res.status(200).json({
+        message: "all orders in admin",
+        success: true,
+        orders: all_orders,
+      });
+    }
+    else{
+      return res.status(200).json({
+        message: "buyer not found",
+        success: false
+      })
+    }
+  } catch (error) {
+    console.log(error);
   }
-}
+};
+
+exports.deleteAdminOrder = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const schema = Joi.alternatives(
+      Joi.object({
+        id: [Joi.string().empty().required()],
+      })
+    );
+    const result = schema.validate({ id });
+    if (result.error) {
+      const message = result.error.details.map((i) => i.message).join(",");
+      return res.status(201).json({
+        message: result.error.details[0].message,
+        error: message,
+        missingParams: result.error.details[0].message,
+        status: false,
+        success: false,
+      });
+    } else {
+      const existingId = await fetchOrderById(id);
+      if (existingId.length !== 0) {
+        await deleteAdminOrder(id);
+        return res.status(201).json({
+          message: "order deleted",
+          success: true,
+        });
+      } else {
+        return res.status(400).json({
+          message: "id not found",
+          success: false,
+        });
+      }
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+exports.update_admin_order = async (req, res) => {
+  try {
+    const {
+      id,
+      buyer_id,
+      order_number,
+      order_date,
+      payment_method,
+      payment_status,
+      cart_id,
+    } = req.body;
+    const schema = Joi.alternatives(
+      Joi.object({
+        id: [Joi.string().empty().required()],
+        buyer_id: [Joi.string().empty().required()],
+        order_number: [Joi.string().empty().required()],
+        order_date: [Joi.string().isoDate().empty().required()],
+        payment_method: [Joi.string().empty().required()],
+        payment_status: [Joi.string().empty().required()],
+        cart_id: [Joi.string().empty().required()],
+      })
+    );
+    const result = schema.validate({
+      id,
+      buyer_id,
+      order_number,
+      order_date,
+      payment_method,
+      payment_status,
+      cart_id,
+    });
+    if (result.error) {
+      const message = result.error.details.map((i) => i.message).join(",");
+      res.status(201).json({
+        message: result.error.details[0].message,
+        error: message,
+        missingParams: result.error.details[0].message,
+        status: false,
+        success: false,
+      });
+    } else {
+      const existingId = await fetchOrderById(id);
+
+      if (existingId.length !== 0) {
+        await updateAdminOrder(
+          id,
+          buyer_id,
+          order_number,
+          order_date,
+          payment_method,
+          payment_status,
+          cart_id
+        );
+        return res.status(201).json({
+          message: "order updated",
+          success: true,
+          order: updateAdminOrder,
+        });
+      } else {
+        return res.status(400).json({
+          message: "id not found",
+          success: false,
+        });
+      }
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};

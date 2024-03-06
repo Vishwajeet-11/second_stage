@@ -2,45 +2,116 @@ const db = require("../utils/database");
 
 module.exports = {
   fetchAdminByEmail: async (email) => {
-    console.log("email ======>>>", email)
+    console.log("email ======>>>", email);
     return db.query(`SELECT * FROM admin WHERE email = '${email}'`);
-    
   },
 
-  total_orders: async (payment_status, cart) => {
-    return db.query("SELECT COUNT(?) FROM ?", [payment_status, cart]);
+  total_orders: async () => {
+    return db.query("SELECT COUNT(payment_status) AS total_orders FROM cart");
   },
 
-  seller_earning: async (cart_price, cart, payment_status) => {
-    return db.query("select SUM(?) FROM ? WHERE ? = 1", [
-      cart_price,
-      cart,
-      payment_status,
-    ]);
+  seller_earning: async () => {
+    return db.query(
+      "select SUM(cart_price) AS total_earning FROM cart WHERE payment_status = 1"
+    );
   },
 
-  customers: async (buyer_name, tbl_buyer) => {
-    return db.query("SELECT COUNT(?) FROM ?", [buyer_name, tbl_buyer]);
+  customers: async () => {
+    return db.query(
+      "SELECT COUNT(buyer_name) AS total_customers FROM tbl_buyer"
+    );
   },
 
   fetchAllCustomers: async (tbl_buyer) => {
-    return db.query("SELECT * FROM ?", [tbl_buyer]);
+    return db.query("SELECT * FROM tbl_buyer");
   },
 
   fetchAllProducts: async () => {
     return db.query("SELECT * FROM product");
   },
 
-  postAllProduct: async(seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description) => {
-    return db.query('INSERT INTO product (seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description])
+  fetchAllCart: async() => {
+    return db.query('SELECT * FROM cart')
   },
 
-  putAllProduct: async (id, seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description) => {
-    return db.query('UPDATE product SET seller_id = ?, size_standard = ?, product_buy_rent = ?, location = ?, product_brand = ?, product_category = ?, product_image = ?, featured_product = ?, product_name = ?, price_sale_lend_price = ?, product_replacement_price = ?, product_rental_period = ?, wishlist_like = ?, product_description = ? WHERE id = ?', [seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description, id]);
-},
+  postAddProductAdmin: async (
+    seller_id,
+    size_standard,
+    product_buy_rent,
+    location,
+    product_brand,
+    product_category,
+    product_image,
+    featured_product,
+    product_name,
+    price_sale_lend_price,
+    product_replacement_price,
+    product_rental_period,
+    wishlist_like,
+    product_description
+  ) => {
+    return db.query(
+      "INSERT INTO product (seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      [
+        seller_id,
+        size_standard,
+        product_buy_rent,
+        location,
+        product_brand,
+        product_category,
+        product_image,
+        featured_product,
+        product_name,
+        price_sale_lend_price,
+        product_replacement_price,
+        product_rental_period,
+        wishlist_like,
+        product_description,
+      ]
+    );
+  },
 
-  deleteAllProduct: async(id) => {
-    return db.query('DELETE FROM product WHERE id =?',[id])
+  putAllProduct: async (
+    id,
+    seller_id,
+    size_standard,
+    product_buy_rent,
+    location,
+    product_brand,
+    product_category,
+    product_image,
+    featured_product,
+    product_name,
+    price_sale_lend_price,
+    product_replacement_price,
+    product_rental_period,
+    wishlist_like,
+    product_description
+  ) => {
+    return db.query(
+      "UPDATE product SET seller_id = ?, size_standard = ?, product_buy_rent = ?, location = ?, product_brand = ?, product_category = ?, product_image = ?, featured_product = ?, product_name = ?, price_sale_lend_price = ?, product_replacement_price = ?, product_rental_period = ?, wishlist_like = ?, product_description = ? WHERE id = ?",
+      [
+        seller_id,
+        size_standard,
+        product_buy_rent,
+        location,
+        product_brand,
+        product_category,
+        product_image,
+        featured_product,
+        product_name,
+        price_sale_lend_price,
+        product_replacement_price,
+        product_rental_period,
+        wishlist_like,
+        product_description,
+        id,
+      ]
+    );
+  },
+
+  deleteAllProduct: async (id) => {
+    return db.query("DELETE FROM product WHERE id =?", [id]);
   },
 
   getAdminCategory: async () => {
@@ -73,8 +144,67 @@ module.exports = {
     return db.query("SELECT * FROM product_category WHERE id =?", [id]);
   },
 
-  deleteProduct: async(id) => {
-    return db.query('DELETE FROM product WHERE id = ?', [id])
-  }
+  deleteProduct: async (id) => {
+    return db.query("DELETE FROM product WHERE id = ?", [id]);
+  },
+
+  fetchCategoryByProductId: async () => {
+    return db.query("SELECT * FROM product_category");
+  },
+
+  getAdminOrders: async () => {
+    return db.query("SELECT * FROM order_checkout");
+  },
+
+  deleteAdminOrder: async (id) => {
+    return db.query("DELETE FROM order_checkout WHERE id = ?", [id]);
+  },
+
+  fetchOrderById: async (id) => {
+    return db.query("SELECT * FROM order_checkout where id = ?", [id]);
+  },
+
+  getCartDataBYId: async (data) => {
+    return db.query("select * from cart where buyer_id = ?", [data]);
+  },
+  total_spend: async (data) => {
+    return db.query("SELECT SUM(cart_price) AS total_spend FROM cart WHERE buyer_id = ?", [data]);
+  },
+
+  fetchBuyer : async(data)=> {
+    return db.query("SELECT * FROM tbl_buyer WHERE id = ?", [data])
+  },
+
+  fetchProductIdById: async(data) => {
+    return db.query("SELECT * FROM product WHERE id = ?", [data])
+  },
+
+  
+  updateAdminOrder: async (
+    id,
+    buyer_id,
+    order_number,
+    order_date,
+    payment_method,
+    payment_status,
+    cart_id
+  ) => {
+    return db.query(
+      "UPDATE order_checkout SET buyer_id = ?, order_number = ?, order_date = ?, payment_method = ?, payment_status = ?, cart_id = ? WHERE id =?",
+      [
+        buyer_id,
+        order_number,
+        order_date,
+        payment_method,
+        payment_status,
+        cart_id,
+        id,
+      ]
+    );
+  },
+
+  order_count: async () => {
+    return db.query("SELECT COUNT(buyer_id) FROM");
+  },
 
 };
