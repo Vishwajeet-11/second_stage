@@ -25,7 +25,10 @@ const {
   total_spend,
   fetchBuyer,
   fetchProductIdById,
-  fetchOrderByOrderNumber
+  fetchOrderByOrderNumber,
+  fetchProductfromCart,
+  fetchPriceFromCart,
+  fetchAllCart,
 } = require("../web_models/admin");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -151,22 +154,21 @@ exports.all_customers = async (req, res) => {
     const all_customers_data = await fetchAllCustomers();
     if (all_customers_data?.length != 0) {
       for (var i = 0; i < all_customers_data?.length; i++) {
-
         // total order
         const data12 = await getCartDataBYId(all_customers_data[i]?.id);
         // console.log(data12,"data12")
         if (data12?.length != 0) {
           all_customers_data[i].total_order = data12?.length;
-        }else{
+        } else {
           all_customers_data[i].total_order = 0;
         }
 
         // total spend
-        const spent_data = await total_spend(all_customers_data[i]?.id)
-        console.log(spent_data, "spent_data")
-        if(spent_data?.length != 0){
+        const spent_data = await total_spend(all_customers_data[i]?.id);
+        console.log(spent_data, "spent_data");
+        if (spent_data?.length != 0) {
           all_customers_data[i].total_spend = spent_data[0]?.total_spend;
-        }else{
+        } else {
           all_customers_data[i].total_spend = 0;
         }
       }
@@ -188,8 +190,33 @@ exports.all_customers = async (req, res) => {
 
 exports.all_product = async (req, res) => {
   try {
-    await fetchAllProducts();
+    const all_cart = await fetchAllCart();
     const all_products_data = await fetchAllProducts();
+    if (all_products_data?.length != 0) {
+      for (let i = 0; i < all_products_data?.length; i++) {
+        // sales
+        const total_sales = await fetchProductfromCart(
+          all_cart[i]?.product_id
+        );
+        if (total_sales?.length != 0) {
+          all_products_data[i].sales = total_sales[0].sales;
+        }
+
+        // price
+        const price = await fetchAllCart(all_cart[i]?.cart_price)
+        console.log(price[0].cart_price)
+
+        if(price?.length != 0) {
+          all_products_data[i].price = price[0].cart_price
+        }
+        else{
+          return res.status(500).json({
+            message: "error in price",
+            success: false
+          })
+        }
+      }
+    }
     return res.status(200).json({
       message: "all products data",
       products: all_products_data,
@@ -209,7 +236,7 @@ exports.postProduct = async (req, res) => {
       location,
       product_brand,
       product_category,
-      product_image,
+      // product_image,
       featured_product,
       product_name,
       product_sale_lend_price,
@@ -226,7 +253,7 @@ exports.postProduct = async (req, res) => {
         location: [Joi.string().empty().required()],
         product_brand: [Joi.string().empty().required()],
         product_category: [Joi.string().empty().required()],
-        product_image: [Joi.string().empty().required()],
+        // product_image: [Joi.string().empty().required()],
         featured_product: [Joi.string().empty().required()],
         product_name: [Joi.string().empty().required()],
         product_sale_lend_price: [Joi.string().empty().required()],
@@ -243,7 +270,7 @@ exports.postProduct = async (req, res) => {
       location,
       product_brand,
       product_category,
-      product_image,
+      // product_image,
       featured_product,
       product_name,
       product_sale_lend_price,
@@ -262,7 +289,8 @@ exports.postProduct = async (req, res) => {
         success: false,
       });
     }
-    await postAddProductAdmin(
+    const product_image = req.file ? req.file.filename : "";
+    const data = {
       seller_id,
       size_standard,
       product_buy_rent,
@@ -276,8 +304,9 @@ exports.postProduct = async (req, res) => {
       product_replacement_price,
       product_rental_period,
       wishlist_like,
-      product_description
-    );
+      product_description,
+    };
+    await postAddProductAdmin(data);
     return res.status(201).json({
       message: "entries created",
       success: "true",
@@ -303,22 +332,48 @@ exports.delete_all_product = async (req, res) => {
 
 exports.product_category = async (req, res) => {
   try {
-    await getAdminCategory();
     const all_product_category = await getAdminCategory();
+    const all_cart = await fetchAllCart();
+    if (all_product_category?.length != 0) {
+      for (let i = 0; i < all_product_category?.length; i++) {
+        // sales
+        const total_sales = await fetchProductfromCart(
+          all_product_category[i].product_id
+        );
+        if (total_sales?.length != 0) {
+          all_product_category[i].sales = total_sales[0].sales;
+        }
+      }
+    }
+
+    // if (all_cart?.length != 0) {
+    //   for (var i = 0; i < all_cart?.length; i++) {
+    //     // price
+    //     const total_price = await fetchPriceFromCart(all_cart[i].cart_price);
+    //     console.log(total_price);
+    //     if (total_price?.length != 0) {
+    //       all_product_category[i].price = total_price?.cart_price;
+    //     }
+    //   }
+    // }
+
     return res.status(200).json({
-      message: "all products category fetched",
+      message: "All product categories fetched with sales count",
       product: all_product_category,
-      success: "true",
+      success: true,
     });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+    });
   }
 };
 
 exports.post_product_category = async (req, res) => {
   try {
     const { product_id, product_category, product_description } = req.body;
-
     const schema = Joi.alternatives(
       Joi.object({
         product_id: [Joi.string().empty().required()],
@@ -599,7 +654,7 @@ exports.update_all_product = async (req, res) => {
         location,
         product_brand,
         product_category,
-        updated_product_image, // Use the updated product image filename
+        updated_product_image,
         featured_product,
         product_name,
         price_sale_lend_price,
@@ -624,39 +679,35 @@ exports.update_all_product = async (req, res) => {
 exports.getAllAdminOrders = async (req, res) => {
   try {
     const all_orders = await getAdminOrders();
-    if(all_orders?.length != 0){
-      for(var i = 0; i< all_orders?.length; i++){
-
+    if (all_orders?.length != 0) {
+      for (var i = 0; i < all_orders?.length; i++) {
         // fetched buyer_name
-        const order_name = await fetchBuyer(all_orders[i].id)
-        if(order_name?.length != 0){
-          all_orders[i].buyer_name = order_name[0].buyer_name
+        const order_name = await fetchBuyer(all_orders[i].id);
+        if (order_name?.length != 0) {
+          all_orders[i].buyer_name = order_name[0].buyer_name;
+        } else {
+          all_orders[i].buyer_name = "";
         }
-        else{
-          all_orders[i].buyer_name = ''
-        }
-        
+
         // fetch price
-        const spent_data = await total_spend(all_orders[i]?.id)
-        console.log(spent_data, "spent_data")
-        if(spent_data?.length != 0){
+        const spent_data = await total_spend(all_orders[i]?.id);
+        console.log(spent_data, "spent_data");
+        if (spent_data?.length != 0) {
           all_orders[i].price = spent_data[0]?.total_spend;
-        }else{
+        } else {
           all_orders[i].total_spend = 0;
         }
-
       }
       return res.status(200).json({
         message: "all orders in admin",
         success: true,
         orders: all_orders,
       });
-    }
-    else{
+    } else {
       return res.status(200).json({
         message: "buyer not found",
-        success: false
-      })
+        success: false,
+      });
     }
   } catch (error) {
     console.log(error);
@@ -701,85 +752,86 @@ exports.deleteAdminOrder = async (req, res) => {
   }
 };
 
-exports.update_admin_order = async (req, res) => {
-  try {
-    const {
-      id,
-      buyer_id,
-      order_number,
-      order_date,
-      payment_method,
-      payment_status,
-      cart_id,
-    } = req.body;
-    const schema = Joi.alternatives(
-      Joi.object({
-        id: [Joi.string().empty().required()],
-        buyer_id: [Joi.string().empty().required()],
-        order_number: [Joi.string().empty().required()],
-        order_date: [Joi.string().isoDate().empty().required()],
-        payment_method: [Joi.string().empty().required()],
-        payment_status: [Joi.string().empty().required()],
-        cart_id: [Joi.string().empty().required()],
-      })
-    );
-    const result = schema.validate({
-      id,
-      buyer_id,
-      order_number,
-      order_date,
-      payment_method,
-      payment_status,
-      cart_id,
-    });
-    if (result.error) {
-      const message = result.error.details.map((i) => i.message).join(",");
-      res.status(201).json({
-        message: result.error.details[0].message,
-        error: message,
-        missingParams: result.error.details[0].message,
-        status: false,
-        success: false,
-      });
-    } else {
-      const existingId = await fetchOrderById(id);
+// exports.update_admin_order = async (req, res) => {
+//   try {
+//     const {
+//       id,
+//       buyer_id,
+//       order_number,
+//       order_date,
+//       payment_method,
+//       payment_status,
+//       cart_id,
+//     } = req.body;
+//     const schema = Joi.alternatives(
+//       Joi.object({
+//         id: [Joi.string().empty().required()],
+//         buyer_id: [Joi.string().empty().required()],
+//         order_number: [Joi.string().empty().required()],
+//         order_date: [Joi.string().isoDate().empty().required()],
+//         payment_method: [Joi.string().empty().required()],
+//         payment_status: [Joi.string().empty().required()],
+//         cart_id: [Joi.string().empty().required()],
+//       })
+//     );
+//     const result = schema.validate({
+//       id,
+//       buyer_id,
+//       order_number,
+//       order_date,
+//       payment_method,
+//       payment_status,
+//       cart_id,
+//     });
+//     if (result.error) {
+//       const message = result.error.details.map((i) => i.message).join(",");
+//       res.status(201).json({
+//         message: result.error.details[0].message,
 
-      if (existingId.length !== 0) {
-        await updateAdminOrder(
-          id,
-          buyer_id,
-          order_number,
-          order_date,
-          payment_method,
-          payment_status,
-          cart_id
-        );
-        return res.status(201).json({
-          message: "order updated",
-          success: true,
-          order: updateAdminOrder,
-        });
-      } else {
-        return res.status(400).json({
-          message: "id not found",
-          success: false,
-        });
-      }
-    }
-  } catch (error) {
-    console.log(error);
-  }
-};
+//         error: message,
+//         missingParams: result.error.details[0].message,
+//         status: false,
+//         success: false,
+//       });
+//     } else {
+//       const existingId = await fetchOrderById(id);
+
+//       if (existingId.length !== 0) {
+//         await updateAdminOrder(
+//           id,
+//           buyer_id,
+//           order_number,
+//           order_date,
+//           payment_method,
+//           payment_status,
+//           cart_id
+//         );
+//         return res.status(201).json({
+//           message: "order updated",
+//           success: true,
+//           order: updateAdminOrder,
+//         });
+//       } else {
+//         return res.status(400).json({
+//           message: "id not found",
+//           success: false,
+//         });
+//       }
+//     }
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
 
 // exports.update_orders_admin = async (req, res) => {
 //   try{
 
 //     const{order_number, buyer_name, price, payment_method, payment_status, order_date} = req.body
-    
+
 //     const existingOrder = await fetchOrderByOrderNumber(order_number)
 //     if(existingOrder.length !== 0){
 //       await fetchOrderByOrderNumber(
-//         buyer_name, price, payment_method, payment_status, order_date 
+//         buyer_name, price, payment_method, payment_status, order_date
 //         )
 //         return res.status(201).json({
 //           message: "order updated",
@@ -798,45 +850,40 @@ exports.update_admin_order = async (req, res) => {
 //   }
 // }
 
-exports.update_admin_order = async(req, res) => {
-  try{
-    const{payment_status } = req.body
-    const schema = Joi.alternatives(
-      Joi.object({
-        payment_status: [Joi.string().empty().required()]
-      })
-    );
-    const result = schema.validate({
-      id,
-      buyer_id,
-      order_number,
-      order_date,
-      payment_method,
-      payment_status,
-      cart_id,
+// this updates order on the basis of payment status only
+exports.update_admin_order_payment = async (req, res) => {
+  try {
+    const { id, payment_status } = req.body;
+
+    const schema = Joi.object({
+      id: Joi.string().required(),
+      payment_status: Joi.string().required(),
     });
-    if (result.error) {
-      const message = result.error.details.map((i) => i.message).join(",");
-      res.status(201).json({
-        message: result.error.details[0].message,
+
+    const { error } = schema.validate({ id, payment_status });
+
+    if (error) {
+      const message = error.details.map((i) => i.message).join(",");
+      return res.status(400).json({
+        message: error.details[0].message,
         error: message,
-        missingParams: result.error.details[0].message,
+        missingParams: error.details[0].message,
         status: false,
         success: false,
       });
-    }
-    else{
-      await updateAdminOrder(payment_status)
+    } else {
+      await updateAdminOrder(id, payment_status);
+      console.log(payment_status);
       return res.status(200).json({
-        message: "payment status updated",
-        success : true
-      })
+        message: "Payment status updated",
+        success: true,
+      });
     }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+    });
   }
-  catch(error){
-    res.status(200).json({
-      message: "error",
-      success: false
-    })
-  }
-}
+};

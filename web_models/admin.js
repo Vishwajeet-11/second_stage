@@ -34,40 +34,9 @@ module.exports = {
     return db.query("SELECT * FROM cart");
   },
 
-  postAddProductAdmin: async (
-    seller_id,
-    size_standard,
-    product_buy_rent,
-    location,
-    product_brand,
-    product_category,
-    product_image,
-    featured_product,
-    product_name,
-    price_sale_lend_price,
-    product_replacement_price,
-    product_rental_period,
-    wishlist_like,
-    product_description
-  ) => {
+  postAddProductAdmin: async (data) => {
     return db.query(
-      "INSERT INTO product (seller_id, size_standard, product_buy_rent, location, product_brand, product_category, product_image, featured_product, product_name, price_sale_lend_price, product_replacement_price, product_rental_period, wishlist_like, product_description) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-      [
-        seller_id,
-        size_standard,
-        product_buy_rent,
-        location,
-        product_brand,
-        product_category,
-        product_image,
-        featured_product,
-        product_name,
-        price_sale_lend_price,
-        product_replacement_price,
-        product_rental_period,
-        wishlist_like,
-        product_description,
-      ]
+      "INSERT INTO product set = ?",[data]
     );
   },
 
@@ -184,24 +153,16 @@ module.exports = {
 
   updateAdminOrder: async (
     id,
-    buyer_id,
-    order_number,
-    order_date,
-    payment_method,
-    payment_status,
-    cart_id
+    // buyer_id,
+    // order_number,
+    // order_date,
+    // payment_method,
+    payment_status
+    // cart_id
   ) => {
     return db.query(
-      "UPDATE order_checkout SET buyer_id = ?, order_number = ?, order_date = ?, payment_method = ?, payment_status = ?, cart_id = ? WHERE id =?",
-      [
-        buyer_id,
-        order_number,
-        order_date,
-        payment_method,
-        payment_status,
-        cart_id,
-        id,
-      ]
+      "UPDATE order_checkout SET payment_status = ? WHERE id =?",
+      [payment_status, id]
     );
   },
 
@@ -219,7 +180,26 @@ module.exports = {
   ) => {
     return db.query(
       "UPDATE order_checkout SET buyer_name = (SELECT buyer_name FROM tbl_buyer WHERE buyer_id = (SELECT buyer_id FROM cart WHERE order_number = '63946' AND payment_status = 1)), payment_status = NULL, payment_method = NULL, order_date = NULL, price = (SELECT SUM(cart_price) AS total_spend FROM cart WHERE buyer_id = (SELECT buyer_id FROM cart WHERE order_number = '63946' AND payment_status = 1)) WHERE order_number = '63946';",
-      [buyer_name,payment_status, payment_method, order_date, order_number, order_number, order_number,price]
+      [
+        buyer_name,
+        payment_status,
+        payment_method,
+        order_date,
+        order_number,
+        order_number,
+        order_number,
+        price,
+      ]
     );
   },
+
+  fetchProductfromCart: async(product_id) => {
+    return db.query('SELECT COUNT(product_id) as sales FROM cart WHERE product_id = ?',[product_id])
+  },
+
+  fetchPriceFromCart: async(product_id) => {
+    return db.query('SELECT cart_price FROM cart as price WHERE product_id = ?', [product_id])
+  },
+
+  
 };

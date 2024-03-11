@@ -22,6 +22,7 @@ router.post("/admin/addProduct", web_adminController.postProduct)
 // all product routes
 router.get("/admin/all_product", web_adminController.all_product)
 router.delete("/admin/delete_product", web_adminController.delete_all_product)
+
 // router.post("/all_product", web_adminController.postProduct)
 router.put("/admin/update_product", web_adminController.update_all_product)
 
@@ -35,6 +36,6 @@ router.put("/admin/update_category", web_adminController.update_product_category
 // admin Orders
 router.get("/admin/orders", web_adminController.getAllAdminOrders)
 router.delete("/admin/delete_order", web_adminController.deleteAdminOrder)
-router.put("/admin/update_order", web_adminController.update_admin_order)
+router.put("/admin/update_order", web_adminController.update_admin_order_payment)
 
 module.exports = router
