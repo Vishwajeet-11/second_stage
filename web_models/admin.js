@@ -36,7 +36,7 @@ module.exports = {
 
   postAddProductAdmin: async (data) => {
     return db.query(
-      "INSERT INTO product set = ?",[data]
+      "INSERT INTO product set ?",[data]
     );
   },
 

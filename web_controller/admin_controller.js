@@ -195,25 +195,22 @@ exports.all_product = async (req, res) => {
     if (all_products_data?.length != 0) {
       for (let i = 0; i < all_products_data?.length; i++) {
         // sales
-        const total_sales = await fetchProductfromCart(
-          all_cart[i]?.product_id
-        );
+        const total_sales = await fetchProductfromCart(all_cart[i]?.product_id);
         if (total_sales?.length != 0) {
           all_products_data[i].sales = total_sales[0].sales;
         }
 
         // price
-        const price = await fetchAllCart(all_cart[i]?.cart_price)
-        console.log(price[0].cart_price)
+        const price = await fetchAllCart(all_cart[i]?.cart_price);
+        console.log(price[0].cart_price);
 
-        if(price?.length != 0) {
-          all_products_data[i].price = price[0].cart_price
-        }
-        else{
+        if (price?.length != 0) {
+          all_products_data[i].price = price[0].cart_price;
+        } else {
           return res.status(500).json({
             message: "error in price",
-            success: false
-          })
+            success: false,
+          });
         }
       }
     }
@@ -236,15 +233,15 @@ exports.postProduct = async (req, res) => {
       location,
       product_brand,
       product_category,
-      // product_image,
       featured_product,
       product_name,
-      product_sale_lend_price,
+      price_sale_lend_price,
       product_replacement_price,
       product_rental_period,
       wishlist_like,
       product_description,
     } = req.body;
+    const product_image = req.file ? req.file.filename : "";
     const schema = Joi.alternatives(
       Joi.object({
         seller_id: [Joi.string().empty().required()],
@@ -256,13 +253,13 @@ exports.postProduct = async (req, res) => {
         // product_image: [Joi.string().empty().required()],
         featured_product: [Joi.string().empty().required()],
         product_name: [Joi.string().empty().required()],
-        product_sale_lend_price: [Joi.string().empty().required()],
+        price_sale_lend_price: [Joi.string().empty().required()],
         product_replacement_price: [Joi.string().empty().required()],
         product_rental_period: [Joi.string().empty().required()],
         wishlist_like: [Joi.string().empty().required()],
         product_description: [Joi.string().empty().required()],
       })
-    );
+    );price_sale_lend_price
     const result = schema.validate({
       seller_id,
       size_standard,
@@ -270,10 +267,9 @@ exports.postProduct = async (req, res) => {
       location,
       product_brand,
       product_category,
-      // product_image,
       featured_product,
       product_name,
-      product_sale_lend_price,
+      price_sale_lend_price,
       product_replacement_price,
       product_rental_period,
       wishlist_like,
@@ -289,7 +285,6 @@ exports.postProduct = async (req, res) => {
         success: false,
       });
     }
-    const product_image = req.file ? req.file.filename : "";
     const data = {
       seller_id,
       size_standard,
@@ -297,17 +292,17 @@ exports.postProduct = async (req, res) => {
       location,
       product_brand,
       product_category,
-      product_image,
       featured_product,
       product_name,
-      product_sale_lend_price,
+      price_sale_lend_price,
       product_replacement_price,
       product_rental_period,
       wishlist_like,
       product_description,
+      product_image,
     };
     await postAddProductAdmin(data);
-    return res.status(201).json({
+    res.status(201).json({
       message: "entries created",
       success: "true",
     });
