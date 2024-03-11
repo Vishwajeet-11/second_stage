@@ -30,8 +30,8 @@ module.exports = {
     return db.query("SELECT * FROM product");
   },
 
-  fetchAllCart: async() => {
-    return db.query('SELECT * FROM cart')
+  fetchAllCart: async () => {
+    return db.query("SELECT * FROM cart");
   },
 
   postAddProductAdmin: async (
@@ -168,18 +168,20 @@ module.exports = {
     return db.query("select * from cart where buyer_id = ?", [data]);
   },
   total_spend: async (data) => {
-    return db.query("SELECT SUM(cart_price) AS total_spend FROM cart WHERE buyer_id = ?", [data]);
+    return db.query(
+      "SELECT SUM(cart_price) AS total_spend FROM cart WHERE buyer_id = ? AND payment_status = 1",
+      [data]
+    );
   },
 
-  fetchBuyer : async(data)=> {
-    return db.query("SELECT * FROM tbl_buyer WHERE id = ?", [data])
+  fetchBuyer: async (data) => {
+    return db.query("SELECT * FROM tbl_buyer WHERE id = ?", [data]);
   },
 
-  fetchProductIdById: async(data) => {
-    return db.query("SELECT * FROM product WHERE id = ?", [data])
+  fetchProductIdById: async (data) => {
+    return db.query("SELECT * FROM product WHERE id = ?", [data]);
   },
 
-  
   updateAdminOrder: async (
     id,
     buyer_id,
@@ -207,4 +209,17 @@ module.exports = {
     return db.query("SELECT COUNT(buyer_id) FROM");
   },
 
+  fetchOrderByOrderNumber: async (
+    buyer_name,
+    payment_status,
+    payment_method,
+    order_date,
+    order_number,
+    price
+  ) => {
+    return db.query(
+      "UPDATE order_checkout SET buyer_name = (SELECT buyer_name FROM tbl_buyer WHERE buyer_id = (SELECT buyer_id FROM cart WHERE order_number = '63946' AND payment_status = 1)), payment_status = NULL, payment_method = NULL, order_date = NULL, price = (SELECT SUM(cart_price) AS total_spend FROM cart WHERE buyer_id = (SELECT buyer_id FROM cart WHERE order_number = '63946' AND payment_status = 1)) WHERE order_number = '63946';",
+      [buyer_name,payment_status, payment_method, order_date, order_number, order_number, order_number,price]
+    );
+  },
 };

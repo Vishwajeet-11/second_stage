@@ -25,6 +25,7 @@ const {
   total_spend,
   fetchBuyer,
   fetchProductIdById,
+  fetchOrderByOrderNumber
 } = require("../web_models/admin");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -150,6 +151,8 @@ exports.all_customers = async (req, res) => {
     const all_customers_data = await fetchAllCustomers();
     if (all_customers_data?.length != 0) {
       for (var i = 0; i < all_customers_data?.length; i++) {
+
+        // total order
         const data12 = await getCartDataBYId(all_customers_data[i]?.id);
         // console.log(data12,"data12")
         if (data12?.length != 0) {
@@ -158,7 +161,7 @@ exports.all_customers = async (req, res) => {
           all_customers_data[i].total_order = 0;
         }
 
-
+        // total spend
         const spent_data = await total_spend(all_customers_data[i]?.id)
         console.log(spent_data, "spent_data")
         if(spent_data?.length != 0){
@@ -418,12 +421,12 @@ exports.update_product_category = async (req, res) => {
       return res.status(200).json({
         message: "Product updated",
         product: updated_product,
-        success: "true",
+        success: true,
       });
     } else {
       return res.status(404).json({
         message: "Product not found or id mismatch",
-        success: "false",
+        success: false,
       });
     }
   } catch (error) {
@@ -623,6 +626,8 @@ exports.getAllAdminOrders = async (req, res) => {
     const all_orders = await getAdminOrders();
     if(all_orders?.length != 0){
       for(var i = 0; i< all_orders?.length; i++){
+
+        // fetched buyer_name
         const order_name = await fetchBuyer(all_orders[i].id)
         if(order_name?.length != 0){
           all_orders[i].buyer_name = order_name[0].buyer_name
@@ -630,9 +635,16 @@ exports.getAllAdminOrders = async (req, res) => {
         else{
           all_orders[i].buyer_name = ''
         }
-
-        //fetching product id from product table 
         
+        // fetch price
+        const spent_data = await total_spend(all_orders[i]?.id)
+        console.log(spent_data, "spent_data")
+        if(spent_data?.length != 0){
+          all_orders[i].price = spent_data[0]?.total_spend;
+        }else{
+          all_orders[i].total_spend = 0;
+        }
+
       }
       return res.status(200).json({
         message: "all orders in admin",
@@ -758,3 +770,73 @@ exports.update_admin_order = async (req, res) => {
     console.log(error);
   }
 };
+
+// exports.update_orders_admin = async (req, res) => {
+//   try{
+
+//     const{order_number, buyer_name, price, payment_method, payment_status, order_date} = req.body
+    
+//     const existingOrder = await fetchOrderByOrderNumber(order_number)
+//     if(existingOrder.length !== 0){
+//       await fetchOrderByOrderNumber(
+//         buyer_name, price, payment_method, payment_status, order_date 
+//         )
+//         return res.status(201).json({
+//           message: "order updated",
+//           success: true
+//         })
+//       }
+//       else{
+//         return res.status(400).json({
+//           message: "error",
+//           success: false
+//         })
+//       }
+//     }
+//   catch(error){
+//     console.log("eternal server error", error)
+//   }
+// }
+
+exports.update_admin_order = async(req, res) => {
+  try{
+    const{payment_status } = req.body
+    const schema = Joi.alternatives(
+      Joi.object({
+        payment_status: [Joi.string().empty().required()]
+      })
+    );
+    const result = schema.validate({
+      id,
+      buyer_id,
+      order_number,
+      order_date,
+      payment_method,
+      payment_status,
+      cart_id,
+    });
+    if (result.error) {
+      const message = result.error.details.map((i) => i.message).join(",");
+      res.status(201).json({
+        message: result.error.details[0].message,
+        error: message,
+        missingParams: result.error.details[0].message,
+        status: false,
+        success: false,
+      });
+    }
+    else{
+      await updateAdminOrder(payment_status)
+      return res.status(200).json({
+        message: "payment status updated",
+        success : true
+      })
+    }
+  }
+  catch(error){
+    res.status(200).json({
+      message: "error",
+      success: false
+    })
+  }
+}

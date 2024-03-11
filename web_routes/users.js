@@ -29,9 +29,9 @@ router.post("/complete_profile", auth, upload.single("file"), web_userController
 
 router.post("/editProfile", auth, upload.single("file"), web_userController.editProfile);
 
-router.post("/lenderissue", web_userController.lenderissue)
-router.post("/buyer_issue", web_userController.buyer_issue)
-router.post("/renter_issue", web_userController.renter_issue)
+router.post("/lenderissue", upload.single('u_product_photo'),web_userController.lenderissue)
+router.post("/buyer_issue", upload.single('upload_product_photo'), web_userController.buyer_issue)
+router.post("/renter_issue",upload.single('file'), web_userController.renter_issue)
 
 
 

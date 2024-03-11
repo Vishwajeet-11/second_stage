@@ -46,7 +46,7 @@ const {
   fetchUserByIdtoken,
   createLenderIssue,
   createBuyerIssue,
-  createRenterIssue
+  createRenterIssue,
 } = require("../web_models/users");
 
 const baseurl = config.base_url;
@@ -833,41 +833,6 @@ exports.myProfile = async (req, res) => {
 };
 
 exports.renter_issue = async (req, res, next) => {
-  try{
-    const{
-      user_id,
-      issue_claimed,
-      date_from,
-      date_to,
-      damaged_product,
-      cleaning_fee,
-      additional_not_listed,
-      value_of_claim,
-      upload_product_photo,
-      tracking_number
-    } = req.body
-
-    await createRenterIssue(user_id, issue_claimed, date_from, date_to, damaged_product, cleaning_fee, additional_not_listed, value_of_claim, upload_product_photo, tracking_number)
-
-    return res.status(201).json({
-      message: "renter issue created",
-      user_id: user_id,
-      status: "True"
-    })
-
-  }
-  catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      error: error,
-      message: "internal server error",
-      status: "False"
-    });
-  }
-}
-
-
-exports.buyer_issue = async (req, res) => {
   try {
     const {
       user_id,
@@ -880,24 +845,80 @@ exports.buyer_issue = async (req, res) => {
       value_of_claim,
       upload_product_photo,
       tracking_number,
-      add_note
     } = req.body;
-
-    
-
-      await createBuyerIssue(user_id, issue_claimed, date_from, date_to, damaged_product, cleaning_fee, additional_not_listed, value_of_claim, upload_product_photo, tracking_number, add_note);
+    const data = {
+      user_id,
+      issue_claimed,
+      date_from,
+      date_to,
+      damaged_product,
+      cleaning_fee,
+      additional_not_listed,
+      value_of_claim,
+      upload_product_photo,
+      tracking_number,
+    };
+    await createRenterIssue(data);
 
     return res.status(201).json({
-      message: 'buyer issue created',
+      message: "renter issue created",
       user_id: user_id,
-      status: "True"
+      status: "True",
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       error: error,
       message: "internal server error",
-      status: "False"
+      status: "False",
+    });
+  }
+};
+
+exports.buyer_issue = async (req, res) => {
+  try {
+    const {
+      user_id,
+      issue_claimed,
+      date_from,
+      date_to,
+      damaged_product,
+      cleaning_fee,
+      additional_not_listed,
+      value_of_claim,
+      tracking_number,
+      add_note,
+    } = req.body;
+
+    const upload_product_photo = req.file ? req.file.filename : "";
+
+    const data = {
+      user_id,
+      issue_claimed,
+      date_from,
+      date_to,
+      damaged_product,
+      cleaning_fee,
+      additional_not_listed,
+      value_of_claim,
+      upload_product_photo,
+      tracking_number,
+      add_note
+    }
+
+    await createBuyerIssue(data);
+
+    return res.status(201).json({
+      message: "buyer issue created",
+      user_id: user_id,
+      status: "True",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      error: error,
+      message: "internal server error",
+      status: "False",
     });
   }
 };
@@ -916,12 +937,13 @@ exports.lenderissue = async (req, res) => {
       cleaning_fee,
       additional_not_listed,
       value_of_claim,
-      u_product_photo,
+      // u_product_photo,
       tracking_number,
       reason,
     } = req.body;
 
-    await createLenderIssue(
+    const u_product_photo = req.file ? req.file.filename : "";
+    const data = {
       user_id,
       issue_claimed,
       date_from,
@@ -936,26 +958,23 @@ exports.lenderissue = async (req, res) => {
       u_product_photo,
       tracking_number,
       reason,
-    );
-
-    // Assuming createLenderIssue is a function that creates a lender issue
-     await createLenderIssue(user_id, issue_claimed, date_from, date_to, damage_fee, total, standard, complex, cleaning_fee, additional_not_listed, value_of_claim, u_product_photo, tracking_number, reason);
+    };
+    await createLenderIssue(data);
 
     return res.status(201).json({
-      message: 'lender issue created',
+      message: "lender issue created",
       user_id: user_id,
-      status: "True"
+      status: "True",
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       error: error,
       message: "internal server error",
-      status: "False"
+      status: "False",
     });
   }
 };
-
 
 exports.editProfile = async (req, res) => {
   try {
@@ -1107,6 +1126,7 @@ exports.complete_profile = async (req, res) => {
         const file = req.file;
         filename = file.filename;
       }
+
       const userInfo = await fetchUserBy_Id(user_id);
       // console.log("userInfo>>>>>>>>>>", userInfo);
       if (userInfo.length !== 0) {

@@ -13,9 +13,7 @@ app.use(cors());
 
 var bodyParser = require("body-parser");
 app.use(bodyParser.json());
-// app.use(bodyParser.urlencoded({extended: false}))
-// in latest body-parser use like below.
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({extended: false}))
 
 //app.use(express.static("public"))
 

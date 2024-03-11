@@ -1,27 +1,25 @@
 const db = require("../utils/database");
 
 module.exports = {
-
-    createRenterIssue: async (user_id, issue_claimed, date_from, date_to, damaged_product, cleaning_fee, additional_not_listed, value_of_claim, upload_product_photo, tracking_number) => {
-      return db.query('INSERT INTO renter_issue (user_id, issue_claimed, date_from, date_to, damaged_product, cleaning_fee, additional_not_listed, value_of_claim, upload_product_photo, tracking_number) VALUE(?,?,?,?,?,?,?,?,?,?)', [user_id, issue_claimed, date_from, date_to, damaged_product, cleaning_fee, additional_not_listed, value_of_claim, upload_product_photo, tracking_number])
-    },
-
-    createLenderIssue: async (user_id, issue_claimed, date_from, date_to, damage_fee, total, standard, complex, cleaning_fee, additional_not_listed, value_of_claim, u_product_photo, tracking_number, reason) => {
-      return db.query('INSERT INTO lender_issue (user_id, issue_claimed, date_from, date_to, damage_fee, total, standard, complex, cleaning_fee, additional_not_listed, value_of_claim, u_product_photo, tracking_number, reason) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [user_id, issue_claimed, date_from, date_to, damage_fee, total, standard, complex, cleaning_fee, additional_not_listed, value_of_claim, u_product_photo, tracking_number, reason]);
-    },
-
-    createBuyerIssue: async (user_id, issue_claimed, date_from, date_to, damaged_product, cleaning_fee, additional_not_listed, value_of_claim, upload_product_photo, tracking_number, add_note) => {
-      return db.query('INSERT INTO buyer_issue (user_id, issue_claimed, date_from, date_to, damaged_product, cleaning_fee, additional_not_listed, value_of_claim, upload_product_photo, tracking_number, add_note) VALUES (?, ? , ?, ?, ?, ?, ?, ?, ?, ?, ?)', [user_id, issue_claimed, date_from, date_to, damaged_product, cleaning_fee, additional_not_listed, value_of_claim, upload_product_photo, tracking_number, add_note]);
+  createRenterIssue: async (data) => {
+    return db.query("INSERT INTO renter_issue set ?", [data]);
   },
-  
 
-  registerUser: (async (user) => {
-    return db.query('insert into tbl_buyer set ?', [user]);
-  }),
+  createLenderIssue: async (data) => {
+    return db.query("INSERT INTO lender_issue set ?", [data]);
+  },
 
-  register_seller: (async (user) => {
-    return db.query('insert into tbl_seller set ?', [user]);
-  }),
+  createBuyerIssue: async (data) => {
+    return db.query("INSERT INTO buyer_issue set ?", [data]);
+  },
+
+  registerUser: async (user) => {
+    return db.query("insert into tbl_buyer set ?", [user]);
+  },
+
+  register_seller: async (user) => {
+    return db.query("insert into tbl_seller set ?", [user]);
+  },
 
   fetchUserByEmail: async (email) => {
     return db.query("select * from tbl_buyer where email = ?", [email]);
@@ -52,20 +50,27 @@ module.exports = {
     return db.query("select * from tbl_buyer where act_token = ?", [act_token]);
   },
 
-
-
   updateUser: async (token, email) => {
-    return db.query("Update tbl_buyer set token=? where email=?", [token, email]);
+    return db.query("Update tbl_buyer set token=? where email=?", [
+      token,
+      email,
+    ]);
   },
   updateUser_1: async (seller_card_number, user_id) => {
-    return db.query(`Update tbl_buyer set seller_card_number= '${seller_card_number}' , seller = 1 where id ='${user_id}'`)
+    return db.query(
+      `Update tbl_buyer set seller_card_number= '${seller_card_number}' , seller = 1 where id ='${user_id}'`
+    );
   },
 
   update_guest_cart: async (guest_token, new_user_id) => {
-    return db.query(`Update cart set id= '${new_user_id}' where id ='${guest_token}'`);
+    return db.query(
+      `Update cart set id= '${new_user_id}' where id ='${guest_token}'`
+    );
   },
   update_guest_whislist: async (guest_token, new_user_id) => {
-    return db.query(`Update product_wishlist set id= '${new_user_id}' where id ='${guest_token}'`);
+    return db.query(
+      `Update product_wishlist set id= '${new_user_id}' where id ='${guest_token}'`
+    );
   },
 
   updateUserByActToken: async (token, act_token, id) => {
@@ -74,8 +79,6 @@ module.exports = {
       [token, act_token, id]
     );
   },
-
-
 
   fetchUserByToken: async (token) => {
     return db.query("select * from tbl_buyer where token = ?", [token]);
@@ -89,12 +92,10 @@ module.exports = {
   },
 
   fetchUserById: async (id) => {
-
     return db.query(" select * from tbl_buyer where id= ?", [id]);
   },
 
   fetchUserByIdtoken: async (id) => {
-
     return db.query(`select * from tbl_buyer where token = '${id}' `, [id]);
   },
 
@@ -124,10 +125,10 @@ module.exports = {
   },
 
   updateUserbyPass_1: async (password, show_password, user_id) => {
-    return db.query("Update tbl_buyer set password=? , show_password = ? where  id =?", [
-      password, show_password,
-      user_id
-    ]);
+    return db.query(
+      "Update tbl_buyer set password=? , show_password = ? where  id =?",
+      [password, show_password, user_id]
+    );
   },
 
   fetchTokenOfUser: async (token) => {
@@ -139,14 +140,14 @@ module.exports = {
   },
 
   verify_phone_no: async (phone_number) => {
-    return db.query("select * from tbl_buyer where phone_number=?", [phone_number]);
+    return db.query("select * from tbl_buyer where phone_number=?", [
+      phone_number,
+    ]);
   },
 
   // fetchsignalsANDsymbol: (async (formattedDate,user_id) => {
   //     return db.query('select * from signals where signals_time =? AND user_id=?', [formattedDate,user_id]);
   // }),
-
-
 
   updatePassword_1: async (password, token) => {
     return db.query("Update tbl_buyer set show_password = ? where token=?", [
@@ -159,7 +160,6 @@ module.exports = {
     return db.query("select * from tbl_buyer ORDER BY `id` DESC");
   },
 
-
   delete_User: async (user_id) => {
     return db.query(`delete  from tbl_buyer where id='${user_id}' `);
   },
@@ -171,14 +171,15 @@ module.exports = {
     );
   },
 
-
   phone_no_check: async (phone_number) => {
     return db.query(
       `select * from  tbl_buyer  where phone_number='${phone_number}'`
     );
   },
   verifyUser: async (user_id) => {
-    return db.query(`update tbl_buyer SET verify_user = "1" where id='${user_id}'`);
+    return db.query(
+      `update tbl_buyer SET verify_user = "1" where id='${user_id}'`
+    );
   },
 
   verify_status: async (phone_number) => {
@@ -187,22 +188,30 @@ module.exports = {
     );
   },
   phone_Check: async (phone_number) => {
-    return db.query(`select * from tbl_buyer where phone_number='${phone_number}'`);
+    return db.query(
+      `select * from tbl_buyer where phone_number='${phone_number}'`
+    );
   },
   username_Check: async (user_name, user_id) => {
-    return db.query(`select * from tbl_buyer where user_name='${user_name}' AND id!='${user_id}'`);
+    return db.query(
+      `select * from tbl_buyer where user_name='${user_name}' AND id!='${user_id}'`
+    );
   },
 
   insert_Links: async (links) => {
-    return db.query('insert into social_media set ? ', [links]);
+    return db.query("insert into social_media set ? ", [links]);
   },
 
   delete_actToken: async (user_id) => {
-    return db.query(`update tbl_buyer  set act_token = "" where id='${user_id}'`);
+    return db.query(
+      `update tbl_buyer  set act_token = "" where id='${user_id}'`
+    );
   },
 
   verify_otp: async (OTP, email) => {
-    return db.query(`select * from  tbl_buyer  where OTP='${OTP}' AND email = '${email}' `);
+    return db.query(
+      `select * from  tbl_buyer  where OTP='${OTP}' AND email = '${email}' `
+    );
   },
 
   Delete_otp: async (OTP, email) => {
