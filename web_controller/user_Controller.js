@@ -843,9 +843,11 @@ exports.renter_issue = async (req, res, next) => {
       cleaning_fee,
       additional_not_listed,
       value_of_claim,
-      upload_product_photo,
       tracking_number,
     } = req.body;
+
+    const upload_product_photo = req.file ? req.file.filename: ""
+
     const data = {
       user_id,
       issue_claimed,
