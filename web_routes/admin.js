@@ -5,7 +5,7 @@ const web_adminController = require("../web_controller/admin_controller")
 const auth = require("../middleware/auth")
 const upload = require("../middleware/product_image")
 
-router.post("admin/login", web_adminController.admin_login)
+router.post("/admin/login", web_adminController.admin_login)
 
 // Dashboard routes
 router.get("/admin/dashboard_data", web_adminController.admin_dashboard)
@@ -18,7 +18,6 @@ router.get("/admin/all_customers", web_adminController.all_customers)
 
 // addProduct routes
 router.post("/admin/addProduct",upload.single('product_image'), web_adminController.postProduct)
-
 
 // all product routes
 router.get("/admin/all_product", web_adminController.all_product)

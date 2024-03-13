@@ -1,3 +1,6 @@
+const db = require("../utils/database");
+
+const config = require("../config");
 const Joi = require("joi");
 const {
   fetchAdminByEmail,
@@ -29,11 +32,20 @@ const {
   fetchProductfromCart,
   fetchPriceFromCart,
   fetchAllCart,
+  fetchDataYearly,
+  fetchFilteredData,
+  fetchYearly,
+  fetchMonthly,
+  fetchWeekly,
+  fetchCartIdCount,
+  fetchProductCount,
 } = require("../web_models/admin");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { parseTwoDigitYear } = require("moment");
 const { all } = require("axios");
+const cart = require("../web_models/cart");
+const baseurl = config.base_url;
 
 exports.admin_login = async (req, res) => {
   try {
@@ -104,19 +116,84 @@ exports.admin_login = async (req, res) => {
 
 exports.admin_dashboard = async (req, res) => {
   try {
-    const seller_data = await seller_earning();
-    const customer_data = await customers();
-    const total_data = await total_orders();
+    const [
+      seller_data,
+      customer_data,
+      total_data,
+      yearlyResult,
+      monthlyResult,
+      weeklyResult,
+    ] = await Promise.all([
+      seller_earning(),
+      customers(),
+      total_orders(),
+      fetchYearly(),
+      fetchMonthly(),
+      fetchWeekly(),
+    ]);
+
+    const date = new Date();
+
+    const yearlyFormatted = yearlyResult.map((row) => ({
+      year: row.year,
+      count: row.count,
+    }));
+
+    const monthlyFormatted = monthlyResult.map((row) => ({
+      month: row.month,
+      count: row.count,
+    }));
+
+    const weeklyFormatted = weeklyResult.map((row) => ({
+      week: row.week,
+      count: row.count,
+    }));
+
+    // Insert monthly data into yearly data
+    const yearlyWithMonthly = yearlyFormatted.map((yearly) => ({
+      ...yearly,
+      monthly: monthlyFormatted.filter((monthly) =>
+        monthly.month.startsWith(yearly.year)
+      ),
+    }));
+
+    // Insert weekly data into monthly data
+    const monthlyWithWeekly = monthlyFormatted.map((monthly) => {
+      const filteredWeekly = weeklyFormatted.filter((weekly) =>
+        monthly.month.includes(weekly.week.toString())
+      );
+
+      return {
+        ...monthly,
+        weekly: filteredWeekly,
+      };
+    });
+
+    // Calculate weekly data for the entire month
+    const weeklyData = monthlyWithWeekly.reduce((acc, monthly) => {
+      const weeklyCounts = monthly.weekly.map((weekly) => weekly.count);
+      const totalWeeklyCount = weeklyCounts.reduce((a, b) => a + b, 0);
+      acc.push({ month: monthly.month, totalWeeklyCount });
+      return acc;
+    }, []);
+
     return res.status(200).json({
       data: {
         seller_earning: seller_data[0]?.total_earning,
         customers: customer_data[0]?.total_customers,
         total_orders: total_data[0]?.total_orders,
+        yearly: yearlyWithMonthly,
+        monthly: monthlyWithWeekly,
+        weekly: weeklyData,
       },
       success: true,
     });
   } catch (error) {
-    console.log(error);
+    // Handle errors appropriately
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, error: "Internal Server Error" });
   }
 };
 
@@ -192,35 +269,55 @@ exports.all_product = async (req, res) => {
   try {
     const all_cart = await fetchAllCart();
     const all_products_data = await fetchAllProducts();
+    const all_order_checkout = await getAdminOrders();
+
     if (all_products_data?.length != 0) {
       for (let i = 0; i < all_products_data?.length; i++) {
-        // sales
+        if (all_products_data[i].product_image) {
+          all_products_data[i].product_image =
+            baseurl + "/productImage/" + all_products_data[i].product_image;
+        }
+
+        // Sales
         const total_sales = await fetchProductfromCart(all_cart[i]?.product_id);
         if (total_sales?.length != 0) {
           all_products_data[i].sales = total_sales[0].sales;
         }
 
-        // price
+        // Price
         const price = await fetchAllCart(all_cart[i]?.cart_price);
-        console.log(price[0].cart_price);
-
         if (price?.length != 0) {
           all_products_data[i].price = price[0].cart_price;
         } else {
           return res.status(500).json({
-            message: "error in price",
+            message: "Error in price",
             success: false,
           });
         }
+
+        // products
+        const buyerId = all_order_checkout[i]?.cart_id;
+        const cartCountResult = await fetchProductCount(buyerId);
+        console.log(buyerId, "cartCountResult", cartCountResult?.length);
+        if (cartCountResult?.length != 0) {
+          all_products_data[i].cart_count = cartCountResult?.length;
+        } else {
+          all_products_data[i].cart_count = 0;
+        }
       }
     }
+
     return res.status(200).json({
-      message: "all products data",
+      message: "All products data",
       products: all_products_data,
       success: true,
     });
   } catch (error) {
-    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+      success: false,
+    });
   }
 };
 
@@ -259,7 +356,7 @@ exports.postProduct = async (req, res) => {
         wishlist_like: [Joi.string().empty().required()],
         product_description: [Joi.string().empty().required()],
       })
-    );price_sale_lend_price
+    );
     const result = schema.validate({
       seller_id,
       size_standard,
@@ -583,6 +680,7 @@ exports.update_product_category = async (req, res) => {
 //   }
 // };
 
+// >>>>>>>>>>>>>>>>>>>> edit all product is left to figure out later
 exports.update_all_product = async (req, res) => {
   try {
     // Destructure request body
@@ -594,7 +692,7 @@ exports.update_all_product = async (req, res) => {
       location,
       product_brand,
       product_category,
-      product_image, // Assuming this is the file field for product image
+      // product_image,
       featured_product,
       product_name,
       price_sale_lend_price,
@@ -613,7 +711,7 @@ exports.update_all_product = async (req, res) => {
       location: Joi.string().required(),
       product_brand: Joi.string().required(),
       product_category: Joi.string().required(),
-      product_image: Joi.string().required(), // Assuming product_image is a required field
+      // product_image: Joi.string().required(),
       featured_product: Joi.string().required(),
       product_name: Joi.string().required(),
       price_sale_lend_price: Joi.string().required(),
@@ -629,18 +727,13 @@ exports.update_all_product = async (req, res) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    // Handle file upload for product image
     upload.single("product_image")(req, res, async function (err) {
       if (err) {
-        // Multer error handling
         return res.status(400).json({ message: err });
       }
 
-      // If no error from Multer, proceed with other operations
-      // Updated product fields with new product image filename
       const updated_product_image = req.file.filename;
 
-      // Call the function to update the product with the updated product image
       const updated_product = await putAllProduct(
         id,
         seller_id,

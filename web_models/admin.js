@@ -35,9 +35,7 @@ module.exports = {
   },
 
   postAddProductAdmin: async (data) => {
-    return db.query(
-      "INSERT INTO product set ?",[data]
-    );
+    return db.query("INSERT INTO product set ?", [data]);
   },
 
   putAllProduct: async (
@@ -193,13 +191,55 @@ module.exports = {
     );
   },
 
-  fetchProductfromCart: async(product_id) => {
-    return db.query('SELECT COUNT(product_id) as sales FROM cart WHERE product_id = ?',[product_id])
+  fetchProductfromCart: async (product_id) => {
+    return db.query(
+      "SELECT COUNT(product_id) as sales FROM cart WHERE product_id = ?",
+      [product_id]
+    );
   },
 
-  fetchPriceFromCart: async(product_id) => {
-    return db.query('SELECT cart_price FROM cart as price WHERE product_id = ?', [product_id])
+  fetchPriceFromCart: async (product_id) => {
+    return db.query(
+      "SELECT cart_price FROM cart as price WHERE product_id = ?",
+      [product_id]
+    );
   },
 
-  
+  fetchFilteredData: async () => {
+    const result = await db.query(
+      "SELECT YEAR(createdAt) AS year, MONTH(createdAt) AS month, COUNT(*) AS count FROM cart GROUP BY YEAR(createdAt), MONTH(createdAt) ORDER BY YEAR(createdAt), MONTH(createdAt)"
+    );
+    return result[0].count;
+  },
+
+  fetchYearly: async () => {
+    return db.query(
+      "SELECT YEAR(createdAt) AS year, COUNT(*) AS count FROM cart GROUP BY YEAR(createdAt) ORDER BY(YEAR)"
+    );
+  },
+
+  fetchMonthly: async () => {
+    return db.query(
+      "SELECT MONTHNAME(createdAt) AS month, COUNT(*) AS count FROM cart GROUP BY MONTHNAME(createdAt) ORDER BY MONTHNAME(createdAt);"
+    );
+  },
+
+  fetchWeekly: async () => {
+    return db.query(
+      "SELECT WEEK(createdAt) as week, COUNT(*) AS count FROM cart GROUP BY WEEK(createdAt) ORDER BY WEEK(createdAt)"
+    );
+  },
+
+  fetchCartIdCount: async (cart_id) => {
+    return db.query(
+      "SELECT COUNT(cart_id) AS products FROM cart WHERE cart_id = ?",
+      [cart_id]
+    );
+  },
+
+  fetchProductCount: async (data) => {
+    return db.query(
+      "SELECT * from cart where cart_id = ?",[data]
+    );
+  },
 };
