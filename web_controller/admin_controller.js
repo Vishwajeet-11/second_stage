@@ -184,7 +184,7 @@ exports.admin_dashboard = async (req, res) => {
         total_orders: total_data[0]?.total_orders,
         yearly: yearlyWithMonthly,
         monthly: monthlyWithWeekly,
-        weekly: weeklyData,
+        weekly: weeklyFormatted,
       },
       success: true,
     });

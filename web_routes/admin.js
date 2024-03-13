@@ -22,9 +22,8 @@ router.post("/admin/addProduct",upload.single('product_image'), web_adminControl
 // all product routes
 router.get("/admin/all_product", web_adminController.all_product)
 router.delete("/admin/delete_product", web_adminController.delete_all_product)
-
-// router.post("/all_product", web_adminController.postProduct)
 router.put("/admin/update_product", web_adminController.update_all_product)
+// router.post("/all_product", web_adminController.postProduct)
 
 // category
 router.get("/category/:id", web_adminController.fetchProductById)
